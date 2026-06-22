@@ -31,17 +31,7 @@
       </router-view>
     </main>
 
-    <!-- Footer -->
-    <footer class="footer">
-      <div class="footer-content">
-        <p>&copy; 2026 LocalMap Story. Built with Vue 3, Vite, and MapLibre GL JS.</p>
-        <div class="footer-links">
-          <router-link to="/">Home</router-link>
-          <span>&middot;</span>
-          <router-link to="/admin">Admin</router-link>
-        </div>
-      </div>
-    </footer>
+
   </div>
 </template>
 

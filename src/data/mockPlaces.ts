@@ -1,3 +1,12 @@
+export interface PlaceMedia {
+  id: string | number;
+  type: 'image' | 'video';
+  url: string;
+  thumbnailUrl?: string;
+  title?: string;
+  provider?: 'youtube' | 'vimeo' | 'local';
+}
+
 export interface Place {
   id: number;
   name: string;
@@ -9,6 +18,7 @@ export interface Place {
   coverUrl: string;
   bestTime: string;
   localTip: string;
+  media?: PlaceMedia[];
 }
 
 export const mockPlaces: Place[] = [
@@ -22,7 +32,28 @@ export const mockPlaces: Place[] = [
     lng: 105.8521,
     coverUrl: 'https://images.unsplash.com/photo-1509060464153-44667396260f?auto=format&fit=crop&w=800&q=80',
     bestTime: 'Sáng sớm hoặc hoàng hôn từ Thứ Sáu đến Chủ Nhật (khi có phố đi bộ).',
-    localTip: 'Hãy ghé qua quán Cafe Đinh gần đó để thưởng thức ly cafe trứng chuẩn vị Hà Nội cổ.'
+    localTip: 'Hãy ghé qua quán Cafe Đinh gần đó để thưởng thức ly cafe trứng chuẩn vị Hà Nội cổ.',
+    media: [
+      {
+        id: '1-1',
+        type: 'image',
+        url: 'https://images.unsplash.com/photo-1509060464153-44667396260f?auto=format&fit=crop&w=800&q=80',
+        title: 'Hồ Gươm sáng sớm'
+      },
+      {
+        id: '1-2',
+        type: 'video',
+        url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+        provider: 'youtube',
+        title: 'Giới thiệu về Hà Nội'
+      },
+      {
+        id: '1-3',
+        type: 'image',
+        url: 'https://images.unsplash.com/photo-1578469645742-46cae010e5d4?auto=format&fit=crop&w=800&q=80',
+        title: 'Tháp Rùa lung linh đêm về'
+      }
+    ]
   },
   {
     id: 2,
@@ -34,19 +65,48 @@ export const mockPlaces: Place[] = [
     lng: 105.8360,
     coverUrl: 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&w=800&q=80',
     bestTime: '8:00 - 10:00 sáng, tránh những ngày lễ hội đông đúc.',
-    localTip: 'Thuê hướng dẫn viên audio guide tại cổng để hiểu chi tiết lịch sử và ý nghĩa của từng khu nhà và bia đá.'
+    localTip: 'Thuê hướng dẫn viên audio guide tại cổng để hiểu chi tiết lịch sử và ý nghĩa của từng khu nhà và bia đá.',
+    media: [
+      {
+        id: '2-1',
+        type: 'image',
+        url: 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&w=800&q=80',
+        title: 'Khuê Văn Các'
+      },
+      {
+        id: '2-2',
+        type: 'image',
+        url: 'https://images.unsplash.com/photo-1540959733332-eab4deceeaf7?auto=format&fit=crop&w=800&q=80',
+        title: 'Nhà bia Tiến sĩ cổ kính'
+      }
+    ]
   },
   {
     id: 3,
     name: 'Nhà Thờ Lớn Hà Nội',
     category: 'Kiến Trúc',
     summary: 'Công trình kiến trúc Gothic đặc trưng hoàn thành vào năm 1887.',
-    description: 'Tên chính thức là Nhà thờ chính tòa Thánh Giuse, được xây dựng theo hình mẫu Nhà thờ Đức Bà Paris với hai tháp chuông cao vút và bức tường nhuốm màu thời gian. Đây là điểm check-in cực hot của giới trẻ.',
+    description: 'Tên chính thức là Nhà thờ chính tòa Thánh Giuse, được xây dựng theo hình mẫu Nhà thờ Đức Bà Paris với hai tháp chuông cao vút và bức tường nhuóom màu thời gian. Đây là điểm check-in cực hot của giới trẻ.',
     lat: 21.0288,
     lng: 105.8490,
     coverUrl: 'https://images.unsplash.com/photo-1599707367072-cd6ada2bc375?auto=format&fit=crop&w=800&q=80',
     bestTime: 'Chiều tối muộn hoặc khi nhà thờ lên đèn.',
-    localTip: 'Trải nghiệm văn hóa "trà chanh Nhà Thờ" tại các quán vỉa hè xung quanh để cảm nhận nhịp sống Hà thành.'
+    localTip: 'Trải nghiệm văn hóa "trà chanh Nhà Thờ" tại các quán vỉa hè xung quanh để cảm nhận nhịp sống Hà thành.',
+    media: [
+      {
+        id: '3-1',
+        type: 'image',
+        url: 'https://images.unsplash.com/photo-1599707367072-cd6ada2bc375?auto=format&fit=crop&w=800&q=80',
+        title: 'Nhà Thờ Lớn Hà Nội'
+      },
+      {
+        id: '3-2',
+        type: 'video',
+        url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4',
+        provider: 'local',
+        title: 'Video test mẫu file MP4'
+      }
+    ]
   },
   {
     id: 4,
@@ -58,7 +118,15 @@ export const mockPlaces: Place[] = [
     lng: 105.8525,
     coverUrl: 'https://images.unsplash.com/photo-1568644839142-8d97530a614b?auto=format&fit=crop&w=800&q=80',
     bestTime: 'Sau 20:00 tối, đặc biệt đông vui vào ngày cuối tuần.',
-    localTip: 'Hãy chọn một bàn nhỏ sát lối đi để vừa uống bia vừa ngắm dòng người tấp nập qua lại.'
+    localTip: 'Hãy chọn một bàn nhỏ sát lối đi để vừa uống bia vừa ngắm dòng người tấp nập qua lại.',
+    media: [
+      {
+        id: '4-1',
+        type: 'image',
+        url: 'https://images.unsplash.com/photo-1568644839142-8d97530a614b?auto=format&fit=crop&w=800&q=80',
+        title: 'Bàn ghế nhựa đặc trưng tại Tạ Hiện'
+      }
+    ]
   },
   {
     id: 5,
@@ -70,7 +138,8 @@ export const mockPlaces: Place[] = [
     lng: 105.8336,
     coverUrl: 'https://images.unsplash.com/photo-1528127269322-539801943592?auto=format&fit=crop&w=800&q=80',
     bestTime: 'Sáng sớm trước 9:00 để cảm nhận sự thanh tịnh.',
-    localTip: 'Nằm ngay trong quần thể Lăng Bác nên bạn có thể kết hợp tham quan Lăng và Bảo tàng Hồ Chí Minh.'
+    localTip: 'Nằm ngay trong quần thể Lăng Bác nên bạn có thể kết hợp tham quan Lăng và Bảo tàng Hồ Chí Minh.',
+    media: []
   },
   {
     id: 6,
@@ -82,7 +151,15 @@ export const mockPlaces: Place[] = [
     lng: 105.8398,
     coverUrl: 'https://images.unsplash.com/photo-1540959733332-eab4deceeaf7?auto=format&fit=crop&w=800&q=80',
     bestTime: 'Mùa thu (tháng 9 - tháng 11) khi thời tiết khô ráo và lá vàng rơi tuyệt đẹp.',
-    localTip: 'Có tour đêm Hoàng Thành Thăng Long rất đặc sắc nếu bạn muốn trải nghiệm giải mã di sản dưới ánh đèn lung linh.'
+    localTip: 'Có tour đêm Hoàng Thành Thăng Long rất đặc sắc nếu bạn muốn trải nghiệm giải mã di sản dưới ánh đèn lung linh.',
+    media: [
+      {
+        id: '6-1',
+        type: 'image',
+        url: 'https://images.unsplash.com/photo-1540959733332-eab4deceeaf7?auto=format&fit=crop&w=800&q=80',
+        title: 'Đoan Môn Hoàng Thành Thăng Long'
+      }
+    ]
   },
   {
     id: 7,
@@ -94,7 +171,15 @@ export const mockPlaces: Place[] = [
     lng: 105.8564,
     coverUrl: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80',
     bestTime: 'Bình minh hoặc hoàng hôn buông xuống sông Hồng.',
-    localTip: 'Xuống bãi đá sông Hồng dưới chân cầu để chụp những bức ảnh đồng quê hoang sơ thơ mộng.'
+    localTip: 'Xuống bãi đá sông Hồng dưới chân cầu để chụp những bức ảnh đồng quê hoang sơ thơ mộng.',
+    media: [
+      {
+        id: '7-1',
+        type: 'image',
+        url: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80',
+        title: 'Hoàng hôn trên Cầu Long Biên'
+      }
+    ]
   },
   {
     id: 8,
@@ -106,7 +191,15 @@ export const mockPlaces: Place[] = [
     lng: 105.8369,
     coverUrl: 'https://images.unsplash.com/photo-1578469645742-46cae010e5d4?auto=format&fit=crop&w=800&q=80',
     bestTime: 'Khoảng 16:30 chiều để vừa tham quan vừa đón hoàng hôn rực rỡ trên Hồ Tây.',
-    localTip: 'Chú ý mặc trang phục lịch sự, kín đáo khi vào lễ chùa để tôn trọng chốn tôn nghiêm.'
+    localTip: 'Chú ý mặc trang phục lịch sự, kín đáo khi vào lễ chùa để tôn trọng chốn tôn nghiêm.',
+    media: [
+      {
+        id: '8-1',
+        type: 'image',
+        url: 'https://images.unsplash.com/photo-1578469645742-46cae010e5d4?auto=format&fit=crop&w=800&q=80',
+        title: 'Chùa Trấn Quốc lung linh lúc hoàng hôn'
+      }
+    ]
   },
   {
     id: 9,
@@ -118,7 +211,15 @@ export const mockPlaces: Place[] = [
     lng: 105.8567,
     coverUrl: 'https://images.unsplash.com/photo-1549692520-acc6669e2f0c?auto=format&fit=crop&w=800&q=80',
     bestTime: 'Buổi tối khi toàn bộ hệ thống đèn chiếu sáng ngoài trời được bật rực rỡ.',
-    localTip: 'Thưởng thức kem Tràng Tiền nổi tiếng chỉ cách nhà hát vài bước đi bộ.'
+    localTip: 'Thưởng thức kem Tràng Tiền nổi tiếng chỉ cách nhà hát vài bước đi bộ.',
+    media: [
+      {
+        id: '9-1',
+        type: 'image',
+        url: 'https://images.unsplash.com/photo-1549692520-acc6669e2f0c?auto=format&fit=crop&w=800&q=80',
+        title: 'Kiến trúc cổ kính của Nhà Hát Lớn'
+      }
+    ]
   },
   {
     id: 10,
@@ -130,7 +231,15 @@ export const mockPlaces: Place[] = [
     lng: 105.8496,
     coverUrl: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&w=800&q=80',
     bestTime: 'Trưa muộn khi các quầy ẩm thực hoạt động đầy đủ nhất.',
-    localTip: 'Món bún ốc nguội và bánh tôm tại ngõ chợ Đồng Xuân rất đáng để thử với giá cực bình dân.'
+    localTip: 'Món bún ốc nguội và bánh tôm tại ngõ chợ Đồng Xuân rất đáng để thử với giá cực bình dân.',
+    media: [
+      {
+        id: '10-1',
+        type: 'image',
+        url: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&w=800&q=80',
+        title: 'Chợ Đồng Xuân nhộn nhịp'
+      }
+    ]
   },
   {
     id: 11,
@@ -142,6 +251,14 @@ export const mockPlaces: Place[] = [
     lng: 105.8341,
     coverUrl: 'https://images.unsplash.com/photo-1582213782179-e0d53f98f2ca?auto=format&fit=crop&w=800&q=80',
     bestTime: 'Sáng mát lành hoặc chiều muộn kết hợp đi dạo đường Thanh Niên.',
-    localTip: 'Hãy chiêm ngưỡng pho tượng cổ đồng đen tinh xảo nằm sâu trong hậu điện để thấy tài năng đúc đồng cổ Việt xưa.'
+    localTip: 'Hãy chiêm ngưỡng pho tượng cổ đồng đen tinh xảo nằm sâu trong hậu điện để thấy tài năng đúc đồng cổ Việt xưa.',
+    media: [
+      {
+        id: '11-1',
+        type: 'image',
+        url: 'https://images.unsplash.com/photo-1582213782179-e0d53f98f2ca?auto=format&fit=crop&w=800&q=80',
+        title: 'Hồ sen trước đền Quán Thánh'
+      }
+    ]
   }
 ];

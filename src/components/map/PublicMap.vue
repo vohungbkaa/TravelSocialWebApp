@@ -13,11 +13,13 @@ import { ref, shallowRef, onMounted, onUnmounted, watch, nextTick } from 'vue';
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { MAP_CONFIG } from '../../config/map';
+import type { AreaScope } from '../../config/map';
 import type { Place } from '../../data/mockPlaces';
 
 const props = defineProps<{
   places: Place[];
   selectedPlace: Place | null;
+  areaConfig: AreaScope;
 }>();
 
 const emit = defineEmits<{
@@ -48,13 +50,18 @@ onMounted(async () => {
   if (!mapContainer.value) return;
 
   try {
+    const initialCenter = props.areaConfig ? props.areaConfig.center : MAP_CONFIG.defaultCenter;
+    const initialZoom = props.areaConfig ? props.areaConfig.zoom : MAP_CONFIG.defaultZoom;
+    const initialBounds = props.areaConfig ? props.areaConfig.bounds : undefined;
+
     map.value = new maplibregl.Map({
       container: mapContainer.value,
       style: MAP_CONFIG.styleUrl,
-      center: MAP_CONFIG.defaultCenter,
-      zoom: MAP_CONFIG.defaultZoom,
+      center: initialCenter,
+      zoom: initialZoom,
       minZoom: MAP_CONFIG.minZoom,
       maxZoom: MAP_CONFIG.maxZoom,
+      maxBounds: initialBounds,
       attributionControl: false // Custom control added below
     });
 
@@ -72,7 +79,17 @@ onMounted(async () => {
 
     map.value.on('load', () => {
       loading.value = false;
+      updateBoundaryLayer();
       updateMarkers();
+      
+      // Fit to initial area bounds
+      if (props.areaConfig) {
+        map.value!.fitBounds(props.areaConfig.bounds, {
+          padding: { top: 60, bottom: 60, left: 60, right: 60 },
+          maxZoom: props.areaConfig.level === 'ward' ? 16 : 14,
+          duration: 0
+        });
+      }
     });
 
   } catch (error) {
@@ -88,6 +105,48 @@ onUnmounted(() => {
   }
 });
 
+// Update boundary polygon layer
+const updateBoundaryLayer = () => {
+  if (!map.value) return;
+  
+  const sourceId = 'area-boundary';
+  const fillLayerId = 'area-boundary-fill';
+  const lineLayerId = 'area-boundary-line';
+  
+  // Remove existing boundary layer/source if they exist
+  if (map.value.getLayer(fillLayerId)) map.value.removeLayer(fillLayerId);
+  if (map.value.getLayer(lineLayerId)) map.value.removeLayer(lineLayerId);
+  if (map.value.getSource(sourceId)) map.value.removeSource(sourceId);
+  
+  if (props.areaConfig && props.areaConfig.boundaryGeoJson) {
+    map.value.addSource(sourceId, {
+      type: 'geojson',
+      data: props.areaConfig.boundaryGeoJson
+    });
+    
+    map.value.addLayer({
+      id: fillLayerId,
+      type: 'fill',
+      source: sourceId,
+      paint: {
+        'fill-color': '#6366f1',
+        'fill-opacity': 0.04
+      }
+    });
+    
+    map.value.addLayer({
+      id: lineLayerId,
+      type: 'line',
+      source: sourceId,
+      paint: {
+        'line-color': '#6366f1',
+        'line-width': 1.5,
+        'line-dasharray': [3, 3]
+      }
+    });
+  }
+};
+
 // Update markers function
 const updateMarkers = () => {
   if (!map.value) return;
@@ -97,8 +156,6 @@ const updateMarkers = () => {
   markersMap.clear();
 
   if (props.places.length === 0) return;
-
-  const bounds = new maplibregl.LngLatBounds();
 
   props.places.forEach((place, index) => {
     const el = document.createElement('div');
@@ -114,37 +171,12 @@ const updateMarkers = () => {
       </div>
     `;
 
-    // Popup Content HTML
-    const popupHtml = `
-      <div class="map-popup-card">
-        <span class="popup-category">${place.category}</span>
-        <h4 class="popup-title">${place.name}</h4>
-        <p class="popup-summary">${place.summary}</p>
-        <div class="popup-meta">
-          <strong>Best time:</strong> ${place.bestTime}
-        </div>
-        <a href="https://www.google.com/maps/dir/?api=1&destination=${place.lat},${place.lng}" 
-           target="_blank" 
-           class="popup-btn-direction">
-           <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polygon points="3 11 22 2 13 21 11 13 3 11"></polygon></svg>
-           Get Directions
-        </a>
-      </div>
-    `;
-
-    const popup = new maplibregl.Popup({
-      offset: [0, -32],
-      closeButton: false,
-      maxWidth: '220px'
-    }).setHTML(popupHtml);
-
     // Create MapLibre Marker
     const marker = new maplibregl.Marker({
       element: el,
       anchor: 'bottom'
     })
       .setLngLat([place.lng, place.lat])
-      .setPopup(popup)
       .addTo(map.value!);
 
     // Handle marker click (set selected place)
@@ -154,17 +186,7 @@ const updateMarkers = () => {
     });
 
     markersMap.set(place.id, { marker, element: el });
-    bounds.extend([place.lng, place.lat]);
   });
-
-  // Fit bounds to show all markers with padding
-  if (props.places.length > 0) {
-    map.value.fitBounds(bounds, {
-      padding: { top: 60, bottom: 60, left: 60, right: 60 },
-      maxZoom: 16,
-      duration: 1200
-    });
-  }
 };
 
 // Watchers
@@ -172,19 +194,34 @@ watch(() => props.places, () => {
   updateMarkers();
 }, { deep: true });
 
+watch(() => props.areaConfig, (newConfig) => {
+  if (!map.value || !newConfig) return;
+  
+  // Update max bounds
+  map.value.setMaxBounds(newConfig.bounds);
+  
+  // Fit bounds
+  map.value.fitBounds(newConfig.bounds, {
+    padding: { top: 60, bottom: 60, left: 60, right: 60 },
+    maxZoom: newConfig.level === 'ward' ? 16 : 14,
+    duration: 1000
+  });
+  
+  // Update boundary
+  updateBoundaryLayer();
+}, { deep: true });
+
 watch(() => props.selectedPlace, (newPlace) => {
   if (!map.value) return;
 
   // Reset all markers' active classes
-  markersMap.forEach(({ element, marker }, id) => {
+  markersMap.forEach(({ element }, id) => {
     const pinEl = element.querySelector('.custom-pin');
     if (pinEl) {
       if (id === newPlace?.id) {
         pinEl.classList.add('active');
-        marker.getPopup()?.addTo(map.value!);
       } else {
         pinEl.classList.remove('active');
-        marker.getPopup()?.remove();
       }
     }
   });
