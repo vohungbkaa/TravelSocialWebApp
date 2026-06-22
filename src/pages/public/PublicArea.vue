@@ -43,6 +43,17 @@
               {{ cat }}
             </button>
           </div>
+
+          <!-- Radius Filter -->
+          <div class="radius-filter-box">
+            <label for="radius-select" class="radius-label">Radius from center:</label>
+            <select id="radius-select" v-model="activeRadius" class="form-control-select">
+              <option :value="null">Show All</option>
+              <option :value="1">Within 1 km</option>
+              <option :value="2">Within 2 km</option>
+              <option :value="5">Within 5 km</option>
+            </select>
+          </div>
         </div>
 
         <!-- Places List -->
@@ -52,21 +63,35 @@
           </div>
           
           <div v-if="filteredPlaces.length === 0" class="empty-state">
-            <p>No places match your search or filter.</p>
+            <p>No places match your search or filters.</p>
           </div>
           
           <div 
-            v-for="place in filteredPlaces" 
+            v-for="(place, index) in filteredPlaces" 
             :key="place.id"
             class="place-item"
             :class="{ active: selectedPlace?.id === place.id }"
             @click="selectPlace(place)"
           >
             <div class="place-meta">
+              <span class="place-index">{{ index + 1 }}</span>
               <span class="place-category-badge">{{ place.category }}</span>
+              <span class="place-distance">~{{ place.distance.toFixed(2) }} km</span>
             </div>
             <h4>{{ place.name }}</h4>
             <p class="place-summary">{{ place.summary }}</p>
+            
+            <div class="place-detail-info" v-if="selectedPlace?.id === place.id">
+              <img :src="place.coverUrl" alt="Place Cover" class="place-cover-img" />
+              <p class="place-desc">{{ place.description }}</p>
+              <div class="place-meta-item">
+                <strong>Best time: </strong>{{ place.bestTime }}
+              </div>
+              <div class="place-meta-item">
+                <strong>Local tip: </strong>{{ place.localTip }}
+              </div>
+            </div>
+
             <div class="place-actions" v-if="selectedPlace?.id === place.id">
               <a 
                 :href="`https://www.google.com/maps/dir/?api=1&destination=${place.lat},${place.lng}`" 
@@ -75,7 +100,15 @@
                 @click.stop
               >
                 <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polygon points="3 11 22 2 13 21 11 13 3 11"></polygon></svg>
-                Directions
+                Directions (Google Maps)
+              </a>
+              <a 
+                :href="`https://www.openstreetmap.org/directions?to=${place.lat},${place.lng}`" 
+                target="_blank" 
+                class="btn btn-outline btn-xs"
+                @click.stop
+              >
+                OSM Nav
               </a>
             </div>
           </div>
@@ -84,24 +117,24 @@
 
       <!-- Map Display Container -->
       <section class="map-section">
-        <div id="map-container" class="map-frame">
-          <div v-if="mapLoading" class="map-loader">
-            <div class="spinner"></div>
-            <span>Initializing interactive map...</span>
-          </div>
-        </div>
+        <PublicMap 
+          :places="filteredPlaces"
+          :selectedPlace="selectedPlace"
+          @select-place="selectPlace"
+        />
       </section>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, shallowRef, computed, onMounted, watch } from 'vue';
+import { ref, computed } from 'vue';
 import { useRoute } from 'vue-router';
-import 'leaflet/dist/leaflet.css';
-import L from 'leaflet';
+import PublicMap from '../../components/map/PublicMap.vue';
+import { mockPlaces } from '../../data/mockPlaces';
+import type { Place } from '../../data/mockPlaces';
 
-// Mock Area Meta
+// Area metadata
 const route = useRoute();
 const areaSlug = computed(() => route.params.areaSlug as string || 'ha-noi');
 
@@ -113,219 +146,63 @@ const areaDescription = ref(
   'Khám phá các di tích lịch sử, không gian văn hóa nghệ thuật tiêu biểu và những ngóc ngách ẩm thực mang đậm nét cổ kính của thủ đô nghìn năm văn hiến.'
 );
 
-// Map References
-const map = shallowRef<L.Map | null>(null);
-const markers = shallowRef<L.Marker[]>([]);
-const mapLoading = ref(true);
-
-// Mock Places Database
-interface Place {
-  id: number;
-  name: string;
-  category: string;
-  summary: string;
-  description: string;
-  lat: number;
-  lng: number;
-}
-
-const places = ref<Place[]>([
-  {
-    id: 1,
-    name: 'Hồ Hoàn Kiếm (Hồ Gươm)',
-    category: 'Văn Hóa',
-    summary: 'Trái tim xanh của thủ đô Hà Nội, gắn liền với truyền thuyết trả gươm thần.',
-    description: 'Nằm giữa trung tâm Hà Nội cổ kính, là biểu tượng du lịch lịch sử với cầu Thê Húc đỏ tươi dẫn vào đền Ngọc Sơn trên đảo ngọc nhỏ giữa hồ.',
-    lat: 21.0285,
-    lng: 105.8521
-  },
-  {
-    id: 2,
-    name: 'Văn Miếu - Quốc Tử Giám',
-    category: 'Lịch Sử',
-    summary: 'Trường đại học đầu tiên của Việt Nam lập năm 1076 dưới triều Lý.',
-    description: 'Một quần thể kiến trúc Nho học cổ kính tiêu biểu tại Hà Nội, thờ Khổng Tử và lưu giữ 82 bia Tiến sĩ vinh danh những người đỗ đạt.',
-    lat: 21.0293,
-    lng: 105.8360
-  },
-  {
-    id: 3,
-    name: 'Nhà Thờ Lớn Hà Nội',
-    category: 'Kiến Trúc',
-    summary: 'Công trình kiến trúc Gothic đặc trưng hoàn thành vào năm 1887.',
-    description: 'Tên chính thức là Nhà thờ chính tòa Thánh Giuse, được xây dựng theo hình mẫu Nhà thờ Đức Bà Paris với hai tháp chuông cao vút.',
-    lat: 21.0288,
-    lng: 105.8490
-  },
-  {
-    id: 4,
-    name: 'Phố Bia Tạ Hiện',
-    category: 'Ẩm Thực',
-    summary: 'Trung tâm vui chơi giải trí về đêm tấp nập của giới trẻ và khách du lịch.',
-    description: 'Ngã tư bia hơi nhộn nhịp nằm trong lòng phố cổ Hà Nội, nổi tiếng với các món ăn đường phố đậm vị và không khí quốc tế náo nhiệt.',
-    lat: 21.0347,
-    lng: 105.8525
-  }
-]);
-
-// Search & Filter State
+// Map & Search States
+const places = ref<Place[]>(mockPlaces);
 const searchQuery = ref('');
 const activeCategory = ref('all');
+const activeRadius = ref<number | null>(null);
 const selectedPlace = ref<Place | null>(null);
+
+// Hanoi center for distance calculation (Ho Guom center)
+const centerCoords = { lat: 21.0285, lng: 105.8521 };
+
+// Haversine formula to compute distance in km
+const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
+  const R = 6371; // Earth's radius in km
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = 
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+};
+
+// Calculate distances from center for all places
+const placesWithDistance = computed(() => {
+  return places.value.map(place => {
+    const distance = calculateDistance(centerCoords.lat, centerCoords.lng, place.lat, place.lng);
+    return {
+      ...place,
+      distance
+    };
+  });
+});
 
 const categories = computed(() => {
   return Array.from(new Set(places.value.map(p => p.category)));
 });
 
+// Apply filters (search, category, and radius)
 const filteredPlaces = computed(() => {
-  return places.value.filter(place => {
+  return placesWithDistance.value.filter(place => {
     const matchesSearch = place.name.toLowerCase().includes(searchQuery.value.toLowerCase()) || 
-                          place.summary.toLowerCase().includes(searchQuery.value.toLowerCase());
+                          place.summary.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
+                          place.description.toLowerCase().includes(searchQuery.value.toLowerCase());
     const matchesCategory = activeCategory.value === 'all' || place.category === activeCategory.value;
-    return matchesSearch && matchesCategory;
-  });
-});
-
-// Update markers when filtered places change
-watch(filteredPlaces, () => {
-  updateMapMarkers();
-});
-
-// Update marker icons styling when selected place changes (no refitting of bounds)
-watch(selectedPlace, (newPlace) => {
-  if (!map.value) return;
-  filteredPlaces.value.forEach((place, index) => {
-    const marker = markers.value[index];
-    if (!marker) return;
-
-    const catClass = getCategoryClass(place.category);
-    const isActive = newPlace?.id === place.id;
-    const markerIndex = index + 1;
-
-    const iconHtml = `
-      <div class="custom-pin ${catClass} ${isActive ? 'active' : ''}">
-        <span class="custom-pin-inner">${markerIndex}</span>
-      </div>
-    `;
-
-    const customIcon = L.divIcon({
-      className: 'custom-marker-wrapper',
-      html: iconHtml,
-      iconSize: [32, 32],
-      iconAnchor: [16, 24]
-    });
-
-    marker.setIcon(customIcon);
-  });
-});
-
-// Map Initialization
-onMounted(() => {
-  // Leaflet image path fix
-  delete (L.Icon.Default.prototype as any)._getIconUrl;
-  L.Icon.Default.mergeOptions({
-    iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
-    iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
-    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
-  });
-
-  setTimeout(() => {
-    mapLoading.value = false;
+    const matchesRadius = activeRadius.value === null || place.distance <= activeRadius.value;
     
-    // Default center at Hanoi
-    map.value = L.map('map-container').setView([21.03, 105.845], 14);
-
-    // High fidelity CartoDB Voyager Map (keeps natural colors for water/parks)
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
-      subdomains: 'abcd',
-      maxZoom: 20
-    }).addTo(map.value);
-
-    updateMapMarkers();
-  }, 300);
+    return matchesSearch && matchesCategory && matchesRadius;
+  });
 });
 
-// Place Selection Logic
+// Selection handler
 const selectPlace = (place: Place) => {
-  selectedPlace.value = place;
-  if (map.value) {
-    map.value.setView([place.lat, place.lng], 16);
-    // Find matching marker and open its popup
-    const marker = markers.value.find(m => {
-      const latlng = m.getLatLng();
-      return Math.abs(latlng.lat - place.lat) < 0.0001 && Math.abs(latlng.lng - place.lng) < 0.0001;
-    });
-    if (marker) {
-      marker.openPopup();
-    }
-  }
-};
-
-// Category custom styles mapper
-const getCategoryClass = (category: string) => {
-  switch (category) {
-    case 'Văn Hóa': return 'marker-van-hoa';
-    case 'Lịch Sử': return 'marker-lich-su';
-    case 'Kiến Trúc': return 'marker-kien-truc';
-    case 'Ẩm Thực': return 'marker-am-thuc';
-    default: return '';
-  }
-};
-
-// Map Marker Updates
-const updateMapMarkers = () => {
-  if (!map.value) return;
-
-  // Clear existing markers
-  markers.value.forEach(m => m.remove());
-  markers.value = [];
-
-  // Add new markers
-  filteredPlaces.value.forEach((place, index) => {
-    if (!map.value) return;
-
-    const popupHtml = `
-      <div style="font-family: var(--font-body); padding: 5px; min-width: 180px;">
-        <span style="font-size: 0.7rem; font-weight: 700; color: var(--primary); text-transform: uppercase; background-color: var(--primary-light); padding: 2px 6px; border-radius: 4px;">${place.category}</span>
-        <h4 style="margin: 6px 0 4px; font-weight: 700; font-size: 0.95rem; color: var(--text-primary);">${place.name}</h4>
-        <p style="font-size: 0.8rem; color: var(--text-secondary); margin: 0 0 10px; line-height: 1.4;">${place.summary}</p>
-        <a href="https://www.google.com/maps/dir/?api=1&destination=${place.lat},${place.lng}" target="_blank" style="display: inline-block; padding: 6px 12px; font-size: 0.75rem; font-weight: 700; background: linear-gradient(135deg, var(--primary), var(--secondary)); color: #fff; border-radius: 6px; text-decoration: none;">Get Directions</a>
-      </div>
-    `;
-
-    const catClass = getCategoryClass(place.category);
-    const isActive = selectedPlace.value?.id === place.id;
-    const markerIndex = index + 1;
-
-    const iconHtml = `
-      <div class="custom-pin ${catClass} ${isActive ? 'active' : ''}">
-        <span class="custom-pin-inner">${markerIndex}</span>
-      </div>
-    `;
-
-    const customIcon = L.divIcon({
-      className: 'custom-marker-wrapper',
-      html: iconHtml,
-      iconSize: [32, 32],
-      iconAnchor: [16, 24]
-    });
-
-    const marker = L.marker([place.lat, place.lng], { icon: customIcon })
-      .addTo(map.value)
-      .bindPopup(popupHtml);
-      
-    marker.on('click', () => {
-      selectedPlace.value = place;
-    });
-
-    markers.value.push(marker);
-  });
-
-  // Fit bounds if we have markers
-  if (markers.value.length > 0) {
-    const group = L.featureGroup(markers.value);
-    map.value.fitBounds(group.getBounds().pad(0.15));
+  // Map back from filtered places objects
+  const foundPlace = places.value.find(p => p.id === place.id);
+  if (foundPlace) {
+    selectedPlace.value = foundPlace;
   }
 };
 </script>
@@ -387,7 +264,7 @@ const updateMapMarkers = () => {
 .workspace-grid {
   flex: 1;
   display: grid;
-  grid-template-columns: 360px 1fr;
+  grid-template-columns: 380px 1fr;
   overflow: hidden;
 }
 
@@ -400,11 +277,11 @@ const updateMapMarkers = () => {
 }
 
 .search-filter-box {
-  padding: 20px;
+  padding: 16px 20px;
   border-bottom: 1px solid var(--border-color);
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 12px;
 }
 
 .search-group {
@@ -457,6 +334,38 @@ const updateMapMarkers = () => {
   color: #ffffff;
 }
 
+.radius-filter-box {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border-top: 1px solid var(--border-color);
+  padding-top: 10px;
+}
+
+.radius-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.form-control-select {
+  padding: 6px 12px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
+  background-color: var(--bg-app);
+  color: var(--text-primary);
+  font-size: 0.8rem;
+  font-weight: 600;
+  outline: none;
+  cursor: pointer;
+  transition: border-color var(--transition-fast);
+}
+
+.form-control-select:focus {
+  border-color: var(--primary);
+}
+
 .places-list {
   flex: 1;
   overflow-y: auto;
@@ -502,6 +411,22 @@ const updateMapMarkers = () => {
 
 .place-meta {
   margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.place-index {
+  font-size: 0.75rem;
+  font-weight: 800;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background-color: var(--primary);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .place-category-badge {
@@ -514,6 +439,13 @@ const updateMapMarkers = () => {
   border-radius: var(--radius-sm);
 }
 
+.place-distance {
+  font-size: 0.725rem;
+  color: var(--text-muted);
+  font-weight: 600;
+  margin-left: auto;
+}
+
 .place-item h4 {
   font-size: 1.05rem;
   margin-bottom: 4px;
@@ -523,6 +455,40 @@ const updateMapMarkers = () => {
   font-size: 0.85rem;
   color: var(--text-secondary);
   line-height: 1.4;
+}
+
+.place-detail-info {
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  border-top: 1px solid rgba(99, 102, 241, 0.15);
+  padding-top: 12px;
+}
+
+.place-cover-img {
+  width: 100%;
+  height: 140px;
+  object-fit: cover;
+  border-radius: var(--radius-sm);
+  background-color: var(--border-color);
+}
+
+.place-desc {
+  font-size: 0.825rem;
+  color: var(--text-primary);
+  line-height: 1.5;
+  margin: 4px 0;
+}
+
+.place-meta-item {
+  font-size: 0.775rem;
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+.place-meta-item strong {
+  color: var(--text-primary);
 }
 
 .place-actions {
@@ -537,124 +503,20 @@ const updateMapMarkers = () => {
   border-radius: var(--radius-sm);
 }
 
+.btn-outline {
+  background: transparent;
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+}
+
+.btn-outline:hover {
+  background: var(--bg-app);
+  border-color: var(--border-hover);
+}
+
 .map-section {
   position: relative;
   height: 100%;
-}
-
-.map-frame {
-  width: 100%;
-  height: 100%;
-  z-index: 10;
-}
-
-.map-loader {
-  position: absolute;
-  inset: 0;
-  background-color: var(--bg-app);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 16px;
-  z-index: 100;
-  color: var(--text-secondary);
-}
-
-.spinner {
-  width: 40px;
-  height: 40px;
-  border: 4px solid var(--border-color);
-  border-top-color: var(--primary);
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-
-/* Custom Leaflet Marker Styling */
-:deep(.custom-marker-wrapper) {
-  background: none !important;
-  border: none !important;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-:deep(.custom-pin) {
-  width: 30px;
-  height: 30px;
-  border-radius: 50% 50% 50% 0;
-  background: var(--marker-color, var(--primary));
-  position: absolute;
-  transform: rotate(-45deg);
-  left: 50%;
-  top: 50%;
-  margin: -24px 0 0 -15px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.35), 0 0 0 2px #ffffff;
-  transition: all var(--transition-normal);
-}
-
-:deep(.custom-pin::after) {
-  content: '';
-  width: 10px;
-  height: 10px;
-  background: #ffffff;
-  position: absolute;
-  border-radius: 50%;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  transition: all var(--transition-normal);
-  z-index: 1;
-}
-
-:deep(.custom-pin-inner) {
-  transform: rotate(45deg);
-  z-index: 2;
-  color: #ffffff;
-  font-size: 0.7rem;
-  font-weight: 800;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-/* Category Specific Colors */
-:deep(.marker-van-hoa) {
-  --marker-color: #a855f7; /* Violet */
-}
-:deep(.marker-lich-su) {
-  --marker-color: #10b981; /* Emerald */
-}
-:deep(.marker-kien-truc) {
-  --marker-color: #3b82f6; /* Blue */
-}
-:deep(.marker-am-thuc) {
-  --marker-color: #f59e0b; /* Amber */
-}
-
-/* Hover and Active states */
-:deep(.custom-pin:hover) {
-  transform: rotate(-45deg) scale(1.15);
-  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.4), 0 0 0 2px #ffffff;
-}
-
-:deep(.custom-pin.active) {
-  transform: rotate(-45deg) scale(1.3);
-  box-shadow: 0 0 0 6px var(--primary-light), 0 6px 16px rgba(0, 0, 0, 0.45), 0 0 0 2.5px #ffffff;
-  z-index: 1000 !important;
-}
-
-:deep(.custom-pin.active::after) {
-  width: 6px;
-  height: 6px;
-  background: var(--marker-color, var(--primary));
 }
 
 @media (max-width: 768px) {
@@ -669,7 +531,7 @@ const updateMapMarkers = () => {
   }
   
   .places-sidebar {
-    height: 400px;
+    height: 500px;
     border-right: none;
     border-bottom: 1px solid var(--border-color);
   }

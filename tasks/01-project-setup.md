@@ -9,8 +9,8 @@ Khoi tao Vue 3 project va cac thu vien nen tang.
 - [x] Tao project Vue 3 + Vite.
 - [x] Cai Vue Router.
 - [x] Cai Pinia.
-- [ ] Cai MapLibre GL JS.
-- [ ] Go Leaflet neu khong con dung trong prototype.
+- [x] Cai MapLibre GL JS.
+- [x] Go Leaflet neu khong con dung trong prototype.
 - [x] Cai type support neu dung TypeScript.
 - [x] Tao layout public/admin co ban.
 - [x] Cau hinh route ban dau.

@@ -1,0 +1,397 @@
+<template>
+  <div class="map-container-wrapper">
+    <div ref="mapContainer" class="map-frame"></div>
+    <div v-if="loading" class="map-loader">
+      <div class="spinner"></div>
+      <span>Loading vector map...</span>
+    </div>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { ref, shallowRef, onMounted, onUnmounted, watch, nextTick } from 'vue';
+import maplibregl from 'maplibre-gl';
+import 'maplibre-gl/dist/maplibre-gl.css';
+import { MAP_CONFIG } from '../../config/map';
+import type { Place } from '../../data/mockPlaces';
+
+const props = defineProps<{
+  places: Place[];
+  selectedPlace: Place | null;
+}>();
+
+const emit = defineEmits<{
+  (e: 'select-place', place: Place): void;
+}>();
+
+const mapContainer = ref<HTMLDivElement | null>(null);
+const map = shallowRef<maplibregl.Map | null>(null);
+const loading = ref(true);
+
+// Keep track of markers to update active states and open popups
+const markersMap = new Map<number, { marker: maplibregl.Marker; element: HTMLElement }>();
+
+// Category specific styling classes
+const getCategoryClass = (category: string) => {
+  switch (category) {
+    case 'Văn Hóa': return 'marker-van-hoa';
+    case 'Lịch Sử': return 'marker-lich-su';
+    case 'Kiến Trúc': return 'marker-kien-truc';
+    case 'Ẩm Thực': return 'marker-am-thuc';
+    default: return '';
+  }
+};
+
+// Initialize Map
+onMounted(async () => {
+  await nextTick();
+  if (!mapContainer.value) return;
+
+  try {
+    map.value = new maplibregl.Map({
+      container: mapContainer.value,
+      style: MAP_CONFIG.styleUrl,
+      center: MAP_CONFIG.defaultCenter,
+      zoom: MAP_CONFIG.defaultZoom,
+      minZoom: MAP_CONFIG.minZoom,
+      maxZoom: MAP_CONFIG.maxZoom,
+      attributionControl: false // Custom control added below
+    });
+
+    // Add navigation controls (zoom, compass)
+    map.value.addControl(new maplibregl.NavigationControl({ showCompass: true }), 'top-right');
+    
+    // Add custom attribution control
+    map.value.addControl(
+      new maplibregl.AttributionControl({
+        compact: false,
+        customAttribution: '&copy; <a href="https://openfreemap.org" target="_blank">OpenFreeMap</a> &copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap contributors</a>'
+      }),
+      'bottom-right'
+    );
+
+    map.value.on('load', () => {
+      loading.value = false;
+      updateMarkers();
+    });
+
+  } catch (error) {
+    console.error('Failed to load MapLibre Map:', error);
+    loading.value = false;
+  }
+});
+
+// Clean up Map instance on unmount
+onUnmounted(() => {
+  if (map.value) {
+    map.value.remove();
+  }
+});
+
+// Update markers function
+const updateMarkers = () => {
+  if (!map.value) return;
+
+  // Clear existing markers
+  markersMap.forEach(({ marker }) => marker.remove());
+  markersMap.clear();
+
+  if (props.places.length === 0) return;
+
+  const bounds = new maplibregl.LngLatBounds();
+
+  props.places.forEach((place, index) => {
+    const el = document.createElement('div');
+    el.className = 'custom-marker-wrapper';
+
+    const catClass = getCategoryClass(place.category);
+    const isActive = props.selectedPlace?.id === place.id;
+    const markerIndex = index + 1;
+
+    el.innerHTML = `
+      <div class="custom-pin ${catClass} ${isActive ? 'active' : ''}">
+        <span class="custom-pin-inner">${markerIndex}</span>
+      </div>
+    `;
+
+    // Popup Content HTML
+    const popupHtml = `
+      <div class="map-popup-card">
+        <span class="popup-category">${place.category}</span>
+        <h4 class="popup-title">${place.name}</h4>
+        <p class="popup-summary">${place.summary}</p>
+        <div class="popup-meta">
+          <strong>Best time:</strong> ${place.bestTime}
+        </div>
+        <a href="https://www.google.com/maps/dir/?api=1&destination=${place.lat},${place.lng}" 
+           target="_blank" 
+           class="popup-btn-direction">
+           <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polygon points="3 11 22 2 13 21 11 13 3 11"></polygon></svg>
+           Get Directions
+        </a>
+      </div>
+    `;
+
+    const popup = new maplibregl.Popup({
+      offset: [0, -32],
+      closeButton: false,
+      maxWidth: '220px'
+    }).setHTML(popupHtml);
+
+    // Create MapLibre Marker
+    const marker = new maplibregl.Marker({
+      element: el,
+      anchor: 'bottom'
+    })
+      .setLngLat([place.lng, place.lat])
+      .setPopup(popup)
+      .addTo(map.value!);
+
+    // Handle marker click (set selected place)
+    el.addEventListener('click', (e) => {
+      e.stopPropagation();
+      emit('select-place', place);
+    });
+
+    markersMap.set(place.id, { marker, element: el });
+    bounds.extend([place.lng, place.lat]);
+  });
+
+  // Fit bounds to show all markers with padding
+  if (props.places.length > 0) {
+    map.value.fitBounds(bounds, {
+      padding: { top: 60, bottom: 60, left: 60, right: 60 },
+      maxZoom: 16,
+      duration: 1200
+    });
+  }
+};
+
+// Watchers
+watch(() => props.places, () => {
+  updateMarkers();
+}, { deep: true });
+
+watch(() => props.selectedPlace, (newPlace) => {
+  if (!map.value) return;
+
+  // Reset all markers' active classes
+  markersMap.forEach(({ element, marker }, id) => {
+    const pinEl = element.querySelector('.custom-pin');
+    if (pinEl) {
+      if (id === newPlace?.id) {
+        pinEl.classList.add('active');
+        marker.getPopup()?.addTo(map.value!);
+      } else {
+        pinEl.classList.remove('active');
+        marker.getPopup()?.remove();
+      }
+    }
+  });
+
+  // Center/fly to selected place
+  if (newPlace) {
+    map.value.easeTo({
+      center: [newPlace.lng, newPlace.lat],
+      zoom: 15.5,
+      duration: 1000
+    });
+  }
+});
+</script>
+
+<style>
+/* Global Popup custom styles to override MapLibre default popup styling */
+.maplibregl-popup-content {
+  padding: 12px !important;
+  border-radius: 12px !important;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1) !important;
+  border: 1px solid var(--border-color) !important;
+  background-color: var(--bg-card) !important;
+  color: var(--text-primary) !important;
+  font-family: var(--font-body, system-ui, -apple-system, sans-serif) !important;
+}
+
+.maplibregl-popup-tip {
+  border-top-color: var(--bg-card) !important;
+  border-bottom-color: var(--bg-card) !important;
+}
+
+.map-popup-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.popup-category {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: var(--primary);
+  text-transform: uppercase;
+  background-color: var(--primary-light);
+  padding: 2px 6px;
+  border-radius: 4px;
+  align-self: flex-start;
+}
+
+.popup-title {
+  margin: 4px 0 2px;
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: var(--text-primary);
+}
+
+.popup-summary {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  line-height: 1.4;
+  margin: 0;
+}
+
+.popup-meta {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
+.popup-btn-direction {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 8px;
+  padding: 6px 12px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, var(--primary), var(--secondary));
+  color: #ffffff !important;
+  border-radius: 6px;
+  text-decoration: none;
+  transition: opacity 0.2s ease;
+}
+
+.popup-btn-direction:hover {
+  opacity: 0.9;
+}
+</style>
+
+<style scoped>
+.map-container-wrapper {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.map-frame {
+  width: 100%;
+  height: 100%;
+}
+
+.map-loader {
+  position: absolute;
+  inset: 0;
+  background-color: var(--bg-app);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  z-index: 100;
+  color: var(--text-secondary);
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid var(--border-color);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Marker / Pin Styling matching Leaflet but tailored for MapLibre positioning */
+:deep(.custom-marker-wrapper) {
+  background: none !important;
+  border: none !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+:deep(.custom-pin) {
+  width: 30px;
+  height: 30px;
+  border-radius: 50% 50% 50% 0;
+  background: var(--marker-color, var(--primary));
+  transform: rotate(-45deg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.35), 0 0 0 2px #ffffff;
+  transition: all var(--transition-normal, 0.25s ease);
+  /* Adjust anchor alignment point */
+  margin-bottom: 15px; 
+}
+
+:deep(.custom-pin::after) {
+  content: '';
+  width: 8px;
+  height: 8px;
+  background: #ffffff;
+  position: absolute;
+  border-radius: 50%;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  transition: all var(--transition-normal, 0.25s ease);
+  z-index: 1;
+}
+
+:deep(.custom-pin-inner) {
+  transform: rotate(45deg);
+  z-index: 2;
+  color: #ffffff;
+  font-size: 0.7rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Category Specific Colors */
+:deep(.marker-van-hoa) {
+  --marker-color: #a855f7; /* Violet */
+}
+:deep(.marker-lich-su) {
+  --marker-color: #10b981; /* Emerald */
+}
+:deep(.marker-kien-truc) {
+  --marker-color: #3b82f6; /* Blue */
+}
+:deep(.marker-am-thuc) {
+  --marker-color: #f59e0b; /* Amber */
+}
+
+/* Hover and Active states */
+:deep(.custom-pin:hover) {
+  transform: rotate(-45deg) scale(1.15);
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.4), 0 0 0 2px #ffffff;
+}
+
+:deep(.custom-pin.active) {
+  transform: rotate(-45deg) scale(1.3);
+  box-shadow: 0 0 0 6px var(--primary-light), 0 6px 16px rgba(0, 0, 0, 0.45), 0 0 0 2.5px #ffffff;
+  z-index: 1000 !important;
+}
+
+:deep(.custom-pin.active::after) {
+  width: 5px;
+  height: 5px;
+  background: var(--marker-color, var(--primary));
+}
+</style>
