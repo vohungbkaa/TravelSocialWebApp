@@ -15,7 +15,7 @@
         <div class="area-sidebar-header">
           <div class="banner-overlay"></div>
           <div class="header-content">
-            <span class="badge">Destination</span>
+            <span class="badge">Điểm đến</span>
             <h2>{{ areaName }}</h2>
             <p class="area-description">{{ areaDescription }}</p>
           </div>
@@ -27,7 +27,7 @@
             <input 
               type="text" 
               class="form-control" 
-              placeholder="Search local places..." 
+              placeholder="Tìm kiếm địa điểm..." 
               v-model="searchQuery"
             />
           </div>
@@ -38,7 +38,7 @@
               :class="{ active: activeCategory === 'all' }"
               @click="activeCategory = 'all'"
             >
-              All
+              Tất cả
             </button>
             <button 
               v-for="cat in categories" 
@@ -53,12 +53,12 @@
 
           <!-- Radius Filter -->
           <div class="radius-filter-box">
-            <label for="radius-select" class="radius-label">Radius from center:</label>
+            <label for="radius-select" class="radius-label">Bán kính từ trung tâm:</label>
             <select id="radius-select" v-model="activeRadius" class="form-control-select">
-              <option :value="null">Show All</option>
-              <option :value="1">Within 1 km</option>
-              <option :value="2">Within 2 km</option>
-              <option :value="5">Within 5 km</option>
+              <option :value="null">Hiển thị tất cả</option>
+              <option :value="1">Trong vòng 1 km</option>
+              <option :value="2">Trong vòng 2 km</option>
+              <option :value="5">Trong vòng 5 km</option>
             </select>
           </div>
         </div>
@@ -66,11 +66,11 @@
         <!-- Places List -->
         <div class="places-list">
           <div class="list-header">
-            <h3>Key Landmarks ({{ filteredPlaces.length }})</h3>
+            <h3>Địa điểm tiêu biểu ({{ filteredPlaces.length }})</h3>
           </div>
           
           <div v-if="filteredPlaces.length === 0" class="empty-state">
-            <p>No places match your search or filters in this scope.</p>
+            <p>Không tìm thấy địa điểm nào phù hợp với tìm kiếm.</p>
           </div>
           
           <div 
@@ -83,7 +83,6 @@
             <div class="place-meta">
               <span class="place-index">{{ index + 1 }}</span>
               <span class="place-category-badge">{{ place.category }}</span>
-              <span class="place-distance">~{{ place.distance.toFixed(2) }} km</span>
             </div>
             <h4>{{ place.name }}</h4>
             <p class="place-summary">{{ place.summary }}</p>
@@ -152,7 +151,7 @@
 
           <!-- Media Horizontal List View (Scroll ngang) -->
           <div 
-            v-if="selectedPlace.media && selectedPlace.media.length > 0" 
+            v-if="sortedMedia && sortedMedia.length > 0" 
             class="media-horizontal-list"
             ref="carouselRef"
             @mousedown="onMouseDown"
@@ -162,7 +161,7 @@
             @scroll="onScroll"
           >
             <div 
-              v-for="item in selectedPlace.media" 
+              v-for="item in sortedMedia" 
               :key="item.id" 
               class="media-card"
               @click="openMediaViewer(item)"
@@ -185,12 +184,6 @@
 
             <div class="sheet-meta-fields">
               <div class="meta-field">
-                <strong>Khoảng cách:</strong> ~{{ selectedPlace.distance.toFixed(2) }} km từ tâm khu vực
-              </div>
-              <div class="meta-field">
-                <strong>Thời điểm tốt nhất:</strong> {{ selectedPlace.bestTime }}
-              </div>
-              <div class="meta-field">
                 <strong>Mẹo nhỏ:</strong> {{ selectedPlace.localTip }}
               </div>
             </div>
@@ -202,15 +195,15 @@
                 class="btn btn-primary"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polygon points="3 11 22 2 13 21 11 13 3 11"></polygon></svg>
-                Google Maps
+                Chỉ đường
               </a>
-              <a 
-                :href="`https://www.openstreetmap.org/directions?to=${selectedPlace.lat},${selectedPlace.lng}`" 
-                target="_blank" 
+              <button 
                 class="btn btn-secondary"
+                @click="openExploreModal"
               >
-                OSM Navigation
-              </a>
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                Khám phá
+              </button>
             </div>
           </div>
         </div>
@@ -286,6 +279,63 @@
       </div>
     </div>
     
+    <!-- Detailed Explore Modal Overlay -->
+    <div 
+      v-if="isExploreModalOpen && selectedPlace" 
+      class="explore-modal-overlay animate-fade-in"
+      @click="closeExploreModal"
+    >
+      <div class="explore-modal-card" @click.stop>
+        <div class="explore-modal-header">
+          <div class="explore-modal-title-box">
+            <span class="badge">{{ selectedPlace.category }}</span>
+            <h2>Giới thiệu: {{ selectedPlace.name }}</h2>
+          </div>
+          <div class="explore-modal-controls">
+            <!-- Text-To-Speech Button -->
+            <button 
+              class="btn-tts" 
+              :class="{ 'is-speaking': isSpeaking }"
+              @click="toggleSpeaking"
+              title="Nghe đọc giới thiệu tự động"
+            >
+              <svg v-if="isSpeaking" xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" class="wave-icon">
+                <!-- Soundwave visual effect SVG -->
+                <rect x="2" y="10" width="3" height="4" rx="1" fill="currentColor"/>
+                <rect x="7" y="6" width="3" height="12" rx="1" fill="currentColor"/>
+                <rect x="12" y="3" width="3" height="18" rx="1" fill="currentColor"/>
+                <rect x="17" y="8" width="3" height="8" rx="1" fill="currentColor"/>
+                <rect x="22" y="11" width="3" height="2" rx="1" fill="currentColor"/>
+              </svg>
+              <svg v-else xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+                <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+              </svg>
+              <span>{{ isSpeaking ? 'Tạm dừng đọc' : 'Đọc tự động' }}</span>
+            </button>
+            
+            <button class="btn-close-explore" @click="closeExploreModal" aria-label="Đóng bảng giới thiệu">
+              <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            </button>
+          </div>
+        </div>
+        
+        <div class="explore-modal-body">
+          <div 
+            v-for="(sec, idx) in selectedPlace.exploreSections" 
+            :key="idx"
+            class="explore-section-block"
+          >
+            <p class="explore-text-paragraph">{{ sec.text }}</p>
+            <div v-if="sec.imgUrl" class="explore-img-container shadow-md">
+              <img :src="sec.imgUrl" class="explore-paragraph-img" alt="Hình ảnh minh họa" />
+              <div class="explore-img-caption">Hình ảnh minh họa cho di tích {{ selectedPlace.name }}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
   </div>
 </template>
 
@@ -524,18 +574,100 @@ const isVideoFile = (url: string) => {
   return url.endsWith('.mp4') || url.endsWith('.webm') || url.endsWith('.ogg');
 };
 
-const handleKeyDown = (e: KeyboardEvent) => {
-  if (e.key === 'Escape') {
-    closeMediaViewer();
+// Explore Modal & Text-To-Speech (TTS) states
+const isExploreModalOpen = ref(false);
+const isSpeaking = ref(false);
+let speechUtterance: SpeechSynthesisUtterance | null = null;
+
+const stopSpeaking = () => {
+  if (window.speechSynthesis) {
+    window.speechSynthesis.cancel();
+  }
+  isSpeaking.value = false;
+};
+
+const closeExploreModal = () => {
+  stopSpeaking();
+  isExploreModalOpen.value = false;
+};
+
+const openExploreModal = () => {
+  isExploreModalOpen.value = true;
+};
+
+const startSpeaking = () => {
+  if (!selectedPlace.value || !selectedPlace.value.exploreSections) return;
+  
+  // Stop any existing speech first
+  stopSpeaking();
+  
+  // Combine paragraph text from explore sections, clean out citation markers like [1, 2]
+  const fullText = selectedPlace.value.exploreSections
+    .map(s => s.text)
+    .join('\n')
+    .replace(/\[\d+(?:,\s*\d+)*\]/g, '');
+  
+  speechUtterance = new SpeechSynthesisUtterance(fullText);
+  speechUtterance.lang = 'vi-VN';
+  
+  // Try to find a Vietnamese speaking voice
+  if (window.speechSynthesis) {
+    const voices = window.speechSynthesis.getVoices();
+    const viVoice = voices.find(voice => voice.lang.includes('vi') || voice.lang.includes('VI'));
+    if (viVoice) {
+      speechUtterance.voice = viVoice;
+    }
+  }
+  
+  speechUtterance.onend = () => {
+    isSpeaking.value = false;
+  };
+  
+  speechUtterance.onerror = () => {
+    isSpeaking.value = false;
+  };
+  
+  isSpeaking.value = true;
+  window.speechSynthesis.speak(speechUtterance);
+};
+
+const toggleSpeaking = () => {
+  if (isSpeaking.value) {
+    stopSpeaking();
+  } else {
+    startSpeaking();
   }
 };
 
-watch(activeViewerMedia, (newVal) => {
-  if (newVal) {
+const handleKeyDown = (e: KeyboardEvent) => {
+  if (e.key === 'Escape') {
+    closeMediaViewer();
+    closeExploreModal();
+  }
+};
+
+watch([activeViewerMedia, isExploreModalOpen], ([newMedia, newExplore]) => {
+  if (newMedia || newExplore) {
     window.addEventListener('keydown', handleKeyDown);
   } else {
     window.removeEventListener('keydown', handleKeyDown);
   }
+});
+
+// Computed sorted media list to always display video items first
+const sortedMedia = computed(() => {
+  if (!selectedPlace.value || !selectedPlace.value.media) return [];
+  return [...selectedPlace.value.media].sort((a, b) => {
+    if (a.type === 'video' && b.type !== 'video') return -1;
+    if (a.type !== 'video' && b.type === 'video') return 1;
+    return 0;
+  });
+});
+
+// Clean up speech when component is unmounted or area changes
+watch(selectedPlace, () => {
+  stopSpeaking();
+  isExploreModalOpen.value = false;
 });
 </script>
 
@@ -1268,6 +1400,217 @@ watch(activeViewerMedia, (newVal) => {
   .slide-drawer-leave-to {
     transform: translateY(100%) !important;
     opacity: 0;
+  }
+}
+
+/* Explore Modal Styles */
+.explore-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(9, 13, 22, 0.7);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 1100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.explore-modal-card {
+  width: 100%;
+  max-width: 800px;
+  height: 85vh;
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-2xl);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: exploreSlideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes exploreSlideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.explore-modal-header {
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  background-color: var(--bg-app);
+}
+
+.explore-modal-title-box {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: flex-start;
+}
+
+.explore-modal-title-box h2 {
+  font-size: 1.35rem;
+  font-weight: 700;
+  margin: 0;
+  color: var(--text-primary);
+}
+
+.explore-modal-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.btn-tts {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--border-color);
+  background-color: var(--bg-card);
+  color: var(--text-primary);
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.btn-tts:hover {
+  background-color: var(--primary-light);
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.btn-tts.is-speaking {
+  background-color: var(--primary);
+  border-color: var(--primary);
+  color: #ffffff;
+  box-shadow: 0 0 0 4px var(--primary-light);
+  animation: pulseShadow 2s infinite;
+}
+
+@keyframes pulseShadow {
+  0% {
+    box-shadow: 0 0 0 0px rgba(99, 102, 241, 0.4);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(99, 102, 241, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0px rgba(99, 102, 241, 0);
+  }
+}
+
+.wave-icon {
+  animation: scaleUpDown 1.2s ease-in-out infinite alternate;
+}
+
+@keyframes scaleUpDown {
+  from { transform: scaleY(0.8); }
+  to { transform: scaleY(1.2); }
+}
+
+.btn-close-explore {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.btn-close-explore:hover {
+  background-color: var(--border-hover);
+}
+
+.explore-modal-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.explore-section-block {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.explore-text-paragraph {
+  font-size: 0.95rem;
+  line-height: 1.65;
+  color: var(--text-primary);
+  margin: 0;
+  text-align: justify;
+  white-space: pre-line;
+}
+
+.explore-img-container {
+  width: 100%;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  border: 1px solid var(--border-color);
+}
+
+.explore-paragraph-img {
+  width: 100%;
+  max-height: 380px;
+  object-fit: cover;
+}
+
+.explore-img-caption {
+  padding: 10px 14px;
+  background-color: var(--bg-app);
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+  font-style: italic;
+  border-top: 1px solid var(--border-color);
+  text-align: center;
+}
+
+@media (max-width: 768px) {
+  .explore-modal-overlay {
+    padding: 12px;
+  }
+  
+  .explore-modal-card {
+    height: 90vh;
+  }
+  
+  .explore-modal-header {
+    padding: 16px;
+  }
+  
+  .explore-modal-body {
+    padding: 16px;
+  }
+  
+  .btn-tts span {
+    display: none;
+  }
+  
+  .btn-tts {
+    padding: 8px;
+    border-radius: 50%;
   }
 }
 </style>
