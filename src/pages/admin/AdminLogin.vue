@@ -10,8 +10,8 @@
           </svg>
           <span>Xã Tiến Thắng</span>
         </router-link>
-        <h2>Admin Authentication</h2>
-        <p>Access your local maps workspace</p>
+        <h2>Đăng nhập quản trị</h2>
+        <p>Quản lý bản đồ và nội dung giới thiệu địa phương</p>
       </div>
 
       <form @submit.prevent="handleLogin" class="login-form">
@@ -20,19 +20,19 @@
         </div>
 
         <div class="form-group">
-          <label class="form-label" for="email">Email address</label>
+          <label class="form-label" for="email">Email</label>
           <input 
             type="email" 
             id="email" 
             class="form-control" 
             v-model="email" 
             required 
-            placeholder="admin@localmapstory.com"
+            placeholder="admin@travelsocial.xyz"
           />
         </div>
 
         <div class="form-group">
-          <label class="form-label" for="password">Password</label>
+          <label class="form-label" for="password">Mật khẩu</label>
           <input 
             type="password" 
             id="password" 
@@ -44,17 +44,17 @@
         </div>
 
         <button type="submit" class="btn btn-primary w-full" :disabled="loading">
-          <span v-if="loading">Signing in...</span>
-          <span v-else>Sign In</span>
+          <span v-if="loading">Đang đăng nhập...</span>
+          <span v-else>Đăng nhập</span>
         </button>
       </form>
 
       <div class="login-footer">
         <button class="btn btn-secondary btn-sm w-full" @click="fillMockCredentials">
-          Fill Demo Credentials
+          Dùng tài khoản demo
         </button>
         <router-link to="/" class="back-link">
-          &larr; Back to Public Site
+          &larr; Quay lại trang bản đồ
         </router-link>
       </div>
     </div>
@@ -86,7 +86,7 @@ const handleLogin = async () => {
     await api.auth.login(email.value, password.value);
     router.push('/admin');
   } catch (error: any) {
-    errorMessage.value = error.message || 'Invalid credentials or connection error.';
+    errorMessage.value = error.message || 'Thông tin đăng nhập không chính xác hoặc lỗi kết nối.';
   } finally {
     loading.value = false;
   }

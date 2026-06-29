@@ -1,4 +1,4 @@
-const API_BASE_URL = 'http://localhost:3000/api/v1';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api/v1';
 
 export interface User {
   id: string;
@@ -173,6 +173,13 @@ export const api = {
   categories: {
     async list(): Promise<PlaceCategory[]> {
       return api.request<PlaceCategory[]>('/place-categories');
+    },
+
+    async create(code: string, name: string, description?: string): Promise<PlaceCategory> {
+      return api.request<PlaceCategory>('/admin/places/categories', {
+        method: 'POST',
+        body: { code, name, description },
+      });
     }
   },
 

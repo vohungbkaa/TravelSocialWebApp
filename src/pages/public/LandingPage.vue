@@ -5,18 +5,18 @@
       <div class="hero-bg-gradient"></div>
       <div class="container">
         <h1 class="hero-title">
-          Khám Phá Di Tích Lịch Sử & Nông Nghiệp <span class="gradient-text">Xã Tiến Thắng</span>
+          Khám phá các điểm văn hóa và nông nghiệp <span class="gradient-text">Xã Tiến Thắng</span>
         </h1>
         <p class="hero-subtitle">
-          Bản đồ tương tác trực quan giới thiệu các địa danh di sản văn hóa lâu đời, kiến trúc cổ kính và mô hình phát triển nông nghiệp công nghệ cao tại xã Tiến Thắng, huyện Mê Linh, Hà Nội.
+          Xem các địa điểm nổi bật tại xã Tiến Thắng, từ di tích lịch sử, kiến trúc làng quê đến mô hình nông nghiệp công nghệ cao.
         </p>
         <div class="hero-actions">
           <router-link to="/hn/tien-thang" class="btn btn-primary">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
-            Khám phá Bản đồ Tiến Thắng
+            Xem bản đồ Tiến Thắng
           </router-link>
           <router-link to="/admin" class="btn btn-secondary">
-            Trang Quản trị
+            Quản trị nội dung
           </router-link>
         </div>
       </div>
@@ -31,24 +31,24 @@
             <div class="feature-icon">
               <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"></polygon><line x1="9" y1="3" x2="9" y2="18"></line><line x1="15" y1="6" x2="15" y2="21"></line></svg>
             </div>
-            <h3>Bản đồ Vector Hiện đại</h3>
-            <p>Trải nghiệm bản đồ mượt mà, tốc độ tải nhanh, hiển thị ranh giới địa bàn xã Tiến Thắng cực kỳ rõ ràng, trực quan.</p>
+            <h3>Bản đồ dễ sử dụng</h3>
+            <p>Xem nhanh vị trí các điểm tham quan, lọc theo danh mục và mở chỉ đường khi cần di chuyển.</p>
           </div>
 
           <div class="card feature-card">
             <div class="feature-icon">
               <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
             </div>
-            <h3>Thuyết minh Đa phương tiện</h3>
-            <p>Hình ảnh thực tế sắc nét, video ngày hội truyền thống hấp dẫn, cùng tính năng nghe đọc tự động (TTS) thuyết minh di tích hữu ích.</p>
+            <h3>Nội dung sinh động</h3>
+            <p>Xem ảnh, video và nghe phần giới thiệu tự động để hiểu thêm câu chuyện của từng địa điểm.</p>
           </div>
 
           <div class="card feature-card">
             <div class="feature-icon">
               <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
             </div>
-            <h3>Nông nghiệp Công nghệ cao</h3>
-            <p>Tham quan, nghiên cứu mô hình nhà màng và hệ thống tưới dưa lưới hiện đại ứng dụng chuyển đổi số của địa phương.</p>
+            <h3>Nông nghiệp công nghệ cao</h3>
+            <p>Tìm hiểu mô hình nhà màng, hệ thống tưới dưa lưới và các hoạt động sản xuất nổi bật tại địa phương.</p>
           </div>
         </div>
       </div>

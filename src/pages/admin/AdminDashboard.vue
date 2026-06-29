@@ -1,61 +1,65 @@
 <template>
   <div class="admin-dashboard animate-fade-in">
     <!-- Header -->
-    <div class="dashboard-header">
+    <div class="dashboard-header animate-slide-down">
       <div>
-        <h1>Dashboard</h1>
-        <p class="subtitle">Welcome back! Manage your story map areas and locations.</p>
+        <h1 class="gradient-text">Bảng điều khiển</h1>
+        <p class="subtitle">Chào mừng quay trở lại! Quản lý các phân vùng bản đồ và các địa danh của bạn.</p>
       </div>
       <div class="header-actions">
-        <button v-if="activeTab === 'areas'" class="btn btn-primary" @click="openAreaModal()">
-          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-          New Area
+        <button v-if="activeTab === 'areas'" class="btn btn-primary btn-premium" @click="openAreaModal()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+          Thêm Vùng mới
         </button>
-        <button v-if="activeTab === 'places'" class="btn btn-primary" @click="openPlaceModal()">
-          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-          New Place (Đại danh)
+        <button v-if="activeTab === 'places'" class="btn btn-secondary btn-premium-secondary" @click="openCategoryModal()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+          Thêm Danh mục
+        </button>
+        <button v-if="activeTab === 'places'" class="btn btn-primary btn-premium" @click="openPlaceModal()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+          Thêm Địa danh mới
         </button>
       </div>
     </div>
 
     <!-- Stats Grid -->
     <div class="stats-grid">
-      <div class="card stat-card">
-        <div class="stat-icon">
-          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+      <div class="card stat-card glow-card">
+        <div class="stat-icon icon-areas">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
         </div>
         <div>
-          <span class="stat-label">Total Areas</span>
+          <span class="stat-label">Tổng số khu vực</span>
           <h3 class="stat-value">{{ areas.length }}</h3>
         </div>
       </div>
 
-      <div class="card stat-card">
+      <div class="card stat-card glow-card">
         <div class="stat-icon icon-places">
-          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="3"></circle></svg>
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="3"></circle></svg>
         </div>
         <div>
-          <span class="stat-label">Total Places</span>
+          <span class="stat-label">Tổng số địa danh</span>
           <h3 class="stat-value">{{ places.length }}</h3>
         </div>
       </div>
 
-      <div class="card stat-card">
+      <div class="card stat-card glow-card">
         <div class="stat-icon icon-routes">
-          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
         </div>
         <div>
-          <span class="stat-label">Published Places</span>
+          <span class="stat-label">Địa danh đã công bố</span>
           <h3 class="stat-value">{{ publishedCount }}</h3>
         </div>
       </div>
 
-      <div class="card stat-card">
-        <div class="stat-icon icon-media">
-          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+      <div class="card stat-card glow-card">
+        <div class="stat-icon icon-categories">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
         </div>
         <div>
-          <span class="stat-label">Categories</span>
+          <span class="stat-label">Tổng số danh mục</span>
           <h3 class="stat-value">{{ categories.length }}</h3>
         </div>
       </div>
@@ -63,27 +67,27 @@
 
     <!-- Tabs Bar -->
     <div class="tabs-bar">
-      <button class="tab-btn" :class="{ active: activeTab === 'places' }" @click="activeTab = 'places'">
-        Places (Đại Danh)
+      <button class="tab-btn" :class="{ active: activeTab === 'places' }" @click="switchTab('places')">
+        Danh sách địa danh
       </button>
-      <button class="tab-btn" :class="{ active: activeTab === 'areas' }" @click="activeTab = 'areas'">
-        Story Areas
+      <button class="tab-btn" :class="{ active: activeTab === 'areas' }" @click="switchTab('areas')">
+        Vùng bản đồ
       </button>
     </div>
 
     <!-- Table of Places -->
-    <div v-if="activeTab === 'places'" class="card table-card">
+    <div v-if="activeTab === 'places'" class="card table-card animate-fade-in">
       <div class="table-header">
-        <h2>Manage Tourist Places</h2>
+        <h2>Quản lý các địa danh du lịch</h2>
         <div class="search-filters">
-          <select v-model="categoryFilter" class="form-control form-control-sm select-filter">
-            <option value="">All Categories</option>
+          <select v-model="categoryFilter" class="form-control select-filter">
+            <option value="">Tất cả danh mục</option>
             <option v-for="cat in categories" :key="cat.id" :value="cat.id">
               {{ cat.name }}
             </option>
           </select>
           <div class="search-box">
-            <input type="text" v-model="searchQuery" class="form-control form-control-sm" placeholder="Search places..." />
+            <input type="text" v-model="searchQuery" class="form-control" placeholder="Tìm kiếm địa danh..." />
           </div>
         </div>
       </div>
@@ -92,65 +96,69 @@
         <table class="data-table">
           <thead>
             <tr>
-              <th>Place Name</th>
-              <th>Category</th>
-              <th>Area</th>
-              <th>Coordinates</th>
-              <th>Status</th>
-              <th class="actions-header">Actions</th>
+              <th>Tên địa danh</th>
+              <th class="col-category">Danh mục</th>
+              <th class="col-area">Khu vực</th>
+              <th class="col-coords">Tọa độ GPS</th>
+              <th class="col-status">Trạng thái</th>
+              <th class="col-actions actions-header">Thao tác</th>
             </tr>
           </thead>
           <tbody>
             <tr v-if="filteredPlaces.length === 0">
-              <td colspan="6" class="empty-cell">No places found. Click "New Place" to create one.</td>
+              <td colspan="6" class="empty-cell">Không tìm thấy địa danh nào. Nhấp vào "Thêm Địa danh mới" để tạo.</td>
             </tr>
             <tr v-for="place in filteredPlaces" :key="place.id">
-              <td class="area-name-cell">
-                <span v-if="place.coverUrl" class="place-thumb" :style="{ backgroundImage: `url(${place.coverUrl})` }"></span>
-                <span v-else class="area-icon">📍</span>
-                <div>
-                  <strong>{{ place.name }}</strong>
-                  <p class="area-desc-short">{{ place.summary || 'No summary provided.' }}</p>
+              <td>
+                <div class="area-name-cell">
+                  <span v-if="place.coverUrl" class="place-thumb" :style="{ backgroundImage: `url(${place.coverUrl})` }"></span>
+                  <span v-else class="area-icon">📍</span>
+                  <div>
+                    <strong>{{ place.name }}</strong>
+                    <p class="area-desc-short" :title="place.summary">{{ place.summary || 'Không có mô tả ngắn.' }}</p>
+                  </div>
                 </div>
               </td>
-              <td>
-                <span class="category-badge">{{ place.category?.name || 'Uncategorized' }}</span>
+              <td class="col-category">
+                <span class="category-badge">{{ place.category?.name || 'Chưa phân loại' }}</span>
               </td>
-              <td>{{ place.area?.name || 'No Area' }}</td>
-              <td>
-                <code v-if="place.latitude && place.longitude">
+              <td class="col-area"><span class="area-text-badge">{{ place.area?.name || 'Không có vùng' }}</span></td>
+              <td class="col-coords">
+                <code v-if="place.latitude && place.longitude" class="coordinate-text">
                   {{ parseFloat(place.latitude.toString()).toFixed(4) }}, {{ parseFloat(place.longitude.toString()).toFixed(4) }}
                 </code>
-                <span v-else class="text-muted">None</span>
+                <span v-else class="text-muted">Không có</span>
               </td>
-              <td>
+              <td class="col-status">
                 <span class="badge-status" :class="place.status.toLowerCase()">
-                  {{ place.status }}
+                  {{ place.status === 'PUBLISHED' ? 'CÔNG BỐ' : (place.status === 'DRAFT' ? 'BẢN NHÁP' : 'ẨN') }}
                 </span>
               </td>
-              <td class="actions-cell">
-                <button 
-                  v-if="place.status === 'DRAFT'" 
-                  class="btn btn-success btn-sm btn-action" 
-                  @click="publishPlace(place)"
-                  title="Publish place to public map"
-                >
-                  Publish
-                </button>
-                <button 
-                  v-if="place.status === 'PUBLISHED'" 
-                  class="btn btn-secondary btn-sm btn-action" 
-                  @click="unpublishPlace(place)"
-                  title="Revert to draft"
-                >
-                  Draft
-                </button>
-                <button class="btn btn-secondary btn-sm" @click="openPlaceModal(place)">
-                  Edit
-                </button>
-                <button class="btn btn-danger btn-sm" @click="deletePlace(place)">
-                  Delete
-                </button>
+              <td class="col-actions">
+                <div class="actions-cell">
+                  <button 
+                    v-if="place.status === 'DRAFT'" 
+                    class="btn btn-success btn-xs btn-action" 
+                    @click="publishPlace(place)"
+                    title="Công bố địa danh lên bản đồ công cộng"
+                  >
+                    Công bố
+                  </button>
+                  <button 
+                    v-if="place.status === 'PUBLISHED'" 
+                    class="btn btn-secondary btn-xs btn-action" 
+                    @click="unpublishPlace(place)"
+                    title="Hạ xuống dạng bản nháp"
+                  >
+                    Bản nháp
+                  </button>
+                  <button class="btn btn-secondary btn-xs btn-edit" @click="openPlaceModal(place)">
+                    Sửa
+                  </button>
+                  <button class="btn btn-danger btn-xs btn-delete" @click="deletePlace(place)">
+                    Xóa
+                  </button>
+                </div>
               </td>
             </tr>
           </tbody>
@@ -159,11 +167,11 @@
     </div>
 
     <!-- Table of Areas -->
-    <div v-if="activeTab === 'areas'" class="card table-card">
+    <div v-if="activeTab === 'areas'" class="card table-card animate-fade-in">
       <div class="table-header">
-        <h2>Your Story Areas</h2>
+        <h2>Các phân vùng bản đồ câu chuyện</h2>
         <div class="search-box">
-          <input type="text" v-model="areaSearchQuery" class="form-control form-control-sm" placeholder="Search areas..." />
+          <input type="text" v-model="areaSearchQuery" class="form-control" placeholder="Tìm kiếm khu vực..." />
         </div>
       </div>
 
@@ -171,44 +179,48 @@
         <table class="data-table">
           <thead>
             <tr>
-              <th>Area Name</th>
-              <th>Slug</th>
-              <th>Coordinates</th>
-              <th>Status</th>
-              <th class="actions-header">Actions</th>
+              <th>Tên khu vực</th>
+              <th class="col-slug">Đường dẫn thân thiện (Slug)</th>
+              <th class="col-coords">Tọa độ tâm</th>
+              <th class="col-status">Trạng thái</th>
+              <th class="col-actions actions-header">Thao tác</th>
             </tr>
           </thead>
           <tbody>
             <tr v-if="filteredAreas.length === 0">
-              <td colspan="5" class="empty-cell">No areas found.</td>
+              <td colspan="5" class="empty-cell">Không tìm thấy khu vực nào.</td>
             </tr>
             <tr v-for="area in filteredAreas" :key="area.id">
-              <td class="area-name-cell">
-                <span class="area-icon">🗺️</span>
-                <div>
-                  <strong>{{ area.name }}</strong>
-                  <p class="area-desc-short">{{ area.description || 'No description' }}</p>
+              <td>
+                <div class="area-name-cell">
+                  <span class="area-icon">🗺️</span>
+                  <div>
+                    <strong>{{ area.name }}</strong>
+                    <p class="area-desc-short" :title="area.description">{{ area.description || 'Không có mô tả' }}</p>
+                  </div>
                 </div>
               </td>
-              <td><code>/{{ area.provinceCode || 'hn' }}/{{ area.slug }}</code></td>
-              <td>
-                <code>{{ parseFloat(area.centerLat.toString()).toFixed(4) }}, {{ parseFloat(area.centerLng.toString()).toFixed(4) }}</code>
+              <td class="col-slug"><code class="slug-text">/{{ area.provinceCode || 'hn' }}/{{ area.slug }}</code></td>
+              <td class="col-coords">
+                <code class="coordinate-text">{{ parseFloat(area.centerLat.toString()).toFixed(4) }}, {{ parseFloat(area.centerLng.toString()).toFixed(4) }}</code>
               </td>
-              <td>
+              <td class="col-status">
                 <span class="badge-status" :class="area.published ? 'published' : 'draft'">
-                  {{ area.published ? 'Published' : 'Draft' }}
+                  {{ area.published ? 'ĐÃ CÔNG BỐ' : 'BẢN NHÁP' }}
                 </span>
               </td>
-              <td class="actions-cell">
-                <router-link :to="`/${area.provinceCode || 'hn'}/${area.slug}`" class="btn btn-secondary btn-sm" target="_blank">
-                  View
-                </router-link>
-                <button class="btn btn-secondary btn-sm" @click="openAreaModal(area)">
-                  Edit
-                </button>
-                <button class="btn btn-danger btn-sm" @click="deleteArea(area)">
-                  Delete
-                </button>
+              <td class="col-actions">
+                <div class="actions-cell">
+                  <router-link :to="`/${area.provinceCode || 'hn'}/${area.slug}`" class="btn btn-secondary btn-xs btn-action" target="_blank">
+                    Xem bản đồ
+                  </router-link>
+                  <button class="btn btn-secondary btn-xs btn-edit" @click="openAreaModal(area)">
+                    Sửa
+                  </button>
+                  <button class="btn btn-danger btn-xs btn-delete" @click="deleteArea(area)">
+                    Xóa
+                  </button>
+                </div>
               </td>
             </tr>
           </tbody>
@@ -216,183 +228,247 @@
       </div>
     </div>
 
-    <!-- Area Dialog/Modal -->
-    <div v-if="showAreaModal" class="modal-overlay" @click.self="showAreaModal = false">
-      <div class="modal-card">
-        <div class="modal-header">
-          <h2>{{ editingArea ? 'Edit Story Area' : 'Create New Area' }}</h2>
-          <button class="close-btn" @click="showAreaModal = false">&times;</button>
-        </div>
-        <form @submit.prevent="saveArea">
-          <div class="modal-body">
-            <div class="form-grid">
-              <div class="form-group">
-                <label class="form-label" for="area-name">Area Name *</label>
-                <input type="text" id="area-name" class="form-control" v-model="areaForm.name" required placeholder="e.g. Xã Tiến Thắng" />
-              </div>
-              <div class="form-group">
-                <label class="form-label" for="area-slug">Slug (URL name)</label>
-                <input type="text" id="area-slug" class="form-control" v-model="areaForm.slug" placeholder="e.g. tien-thang (leave blank to auto-generate)" />
-              </div>
-              <div class="form-group">
-                <label class="form-label" for="area-province">Province/City Code *</label>
-                <input type="text" id="area-province" class="form-control" v-model="areaForm.provinceCode" required placeholder="e.g. hn" />
-              </div>
-              <div class="form-group">
-                <label class="form-label" for="area-radius">Default Radius (km)</label>
-                <input type="number" step="0.1" id="area-radius" class="form-control" v-model.number="areaForm.defaultRadiusKm" />
-              </div>
-              <div class="form-group">
-                <label class="form-label" for="area-lat">Center Latitude *</label>
-                <input type="number" step="0.000001" id="area-lat" class="form-control" v-model.number="areaForm.centerLat" required />
-              </div>
-              <div class="form-group">
-                <label class="form-label" for="area-lng">Center Longitude *</label>
-                <input type="number" step="0.000001" id="area-lng" class="form-control" v-model.number="areaForm.centerLng" required />
-              </div>
-              <div class="form-group form-grid-full">
-                <label class="form-label" for="area-cover">Cover Image URL</label>
-                <input type="text" id="area-cover" class="form-control" v-model="areaForm.coverUrl" placeholder="https://example.com/image.jpg" />
-              </div>
-              <div class="form-group form-grid-full">
-                <label class="form-label" for="area-desc">Description</label>
-                <textarea id="area-desc" class="form-control" rows="3" v-model="areaForm.description" placeholder="Provide background information about this area..."></textarea>
-              </div>
-              <div class="form-group form-grid-full checkbox-group">
-                <label>
-                  <input type="checkbox" v-model="areaForm.published" />
-                  <span>Publish this area to public site</span>
-                </label>
+    <!-- Area Dialog/Modal (Teleported to body to avoid stacking context overlapping) -->
+    <Teleport to="body">
+      <div v-if="showAreaModal" class="modal-overlay" @click.self="showAreaModal = false">
+        <div class="modal-card modal-premium-card animate-scale-up">
+          <div class="modal-header">
+            <h2>{{ editingArea ? 'Chỉnh sửa vùng câu chuyện' : 'Tạo mới vùng câu chuyện' }}</h2>
+            <button class="close-btn" @click="showAreaModal = false">&times;</button>
+          </div>
+          <form @submit.prevent="saveArea">
+            <div class="modal-body">
+              <div class="form-grid">
+                <div class="form-group">
+                  <label class="form-label" for="area-name">Tên khu vực *</label>
+                  <input type="text" id="area-name" class="form-control" v-model="areaForm.name" required placeholder="Ví dụ: Xã Tiến Thắng" />
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="area-slug">Đường dẫn thân thiện (Slug)</label>
+                  <input type="text" id="area-slug" class="form-control" v-model="areaForm.slug" placeholder="Ví dụ: tien-thang (để trống tự sinh)" />
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="area-province">Mã Tỉnh/Thành phố *</label>
+                  <input type="text" id="area-province" class="form-control" v-model="areaForm.provinceCode" required placeholder="Ví dụ: hn" />
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="area-radius">Bán kính quét mặc định (km)</label>
+                  <input type="number" step="0.1" id="area-radius" class="form-control" v-model.number="areaForm.defaultRadiusKm" />
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="area-lat">Vĩ độ tâm (Latitude) *</label>
+                  <input type="number" step="0.000001" id="area-lat" class="form-control" v-model.number="areaForm.centerLat" required />
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="area-lng">Kinh độ tâm (Longitude) *</label>
+                  <input type="number" step="0.000001" id="area-lng" class="form-control" v-model.number="areaForm.centerLng" required />
+                </div>
+                <div class="form-group form-grid-full">
+                  <label class="form-label" for="area-cover">Đường dẫn hình ảnh bìa</label>
+                  <input type="text" id="area-cover" class="form-control" v-model="areaForm.coverUrl" placeholder="https://example.com/image.jpg" />
+                </div>
+                <div class="form-group form-grid-full">
+                  <label class="form-label" for="area-desc">Mô tả giới thiệu</label>
+                  <textarea id="area-desc" class="form-control" rows="3" v-model="areaForm.description" placeholder="Giới thiệu chung về khu vực lịch sử/nông nghiệp này..."></textarea>
+                </div>
+                <div class="form-group form-grid-full checkbox-group">
+                  <label>
+                    <input type="checkbox" v-model="areaForm.published" />
+                    <span>Xuất bản khu vực này lên trang công cộng</span>
+                  </label>
+                </div>
               </div>
             </div>
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" @click="showAreaModal = false">Cancel</button>
-            <button type="submit" class="btn btn-primary" :disabled="modalLoading">
-              {{ modalLoading ? 'Saving...' : 'Save Area' }}
-            </button>
-          </div>
-        </form>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" @click="showAreaModal = false">Hủy</button>
+              <button type="submit" class="btn btn-primary" :disabled="modalLoading">
+                {{ modalLoading ? 'Đang lưu...' : 'Lưu khu vực' }}
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
-    </div>
+    </Teleport>
 
-    <!-- Place Dialog/Modal -->
-    <div v-if="showPlaceModal" class="modal-overlay" @click.self="showPlaceModal = false">
-      <div class="modal-card">
-        <div class="modal-header">
-          <h2>{{ editingPlace ? 'Edit Tourist Place' : 'Create New Place' }}</h2>
-          <button class="close-btn" @click="showPlaceModal = false">&times;</button>
-        </div>
-        <form @submit.prevent="savePlace">
-          <div class="modal-body">
-            <div class="form-grid">
-              <div class="form-group">
-                <label class="form-label" for="place-name">Place Name *</label>
-                <input type="text" id="place-name" class="form-control" v-model="placeForm.name" required placeholder="e.g. Đình Bạch Trữ" />
-              </div>
-              <div class="form-group">
-                <label class="form-label" for="place-category">Category *</label>
-                <select id="place-category" class="form-control" v-model="placeForm.categoryId" required>
-                  <option value="" disabled>Select category</option>
-                  <option v-for="cat in categories" :key="cat.id" :value="cat.id">
-                    {{ cat.name }}
-                  </option>
-                </select>
-              </div>
-              <div class="form-group">
-                <label class="form-label" for="place-area">Story Area *</label>
-                <select id="place-area" class="form-control" v-model="placeForm.areaId" required>
-                  <option value="" disabled>Select area</option>
-                  <option v-for="a in areas" :key="a.id" :value="a.id">
-                    {{ a.name }}
-                  </option>
-                </select>
-              </div>
-              <div class="form-group">
-                <label class="form-label" for="place-price-level">Price Level</label>
-                <select id="place-price-level" class="form-control" v-model="placeForm.priceLevel">
-                  <option value="FREE">FREE</option>
-                  <option value="LOW">LOW</option>
-                  <option value="MEDIUM">MEDIUM</option>
-                  <option value="HIGH">HIGH</option>
-                </select>
-              </div>
-              <div class="form-group">
-                <label class="form-label" for="place-lat">Latitude *</label>
-                <input type="number" step="0.000001" id="place-lat" class="form-control" v-model.number="placeForm.latitude" required />
-              </div>
-              <div class="form-group">
-                <label class="form-label" for="place-lng">Longitude *</label>
-                <input type="number" step="0.000001" id="place-lng" class="form-control" v-model.number="placeForm.longitude" required />
-              </div>
-              <div class="form-group">
-                <label class="form-label" for="place-min-cost">Min Cost Estimate (đ)</label>
-                <input type="number" id="place-min-cost" class="form-control" v-model.number="placeForm.estimatedMinCost" />
-              </div>
-              <div class="form-group">
-                <label class="form-label" for="place-max-cost">Max Cost Estimate (đ)</label>
-                <input type="number" id="place-max-cost" class="form-control" v-model.number="placeForm.estimatedMaxCost" />
-              </div>
-              <div class="form-group">
-                <label class="form-label" for="place-duration">Visit Duration (minutes)</label>
-                <input type="number" id="place-duration" class="form-control" v-model.number="placeForm.averageVisitDurationMinutes" />
-              </div>
-              <div class="form-group">
-                <label class="form-label" for="place-address">Full Address</label>
-                <input type="text" id="place-address" class="form-control" v-model="placeForm.address" placeholder="e.g. Bạch Trữ, Tiến Thắng, Mê Linh" />
-              </div>
-              <div class="form-group form-grid-full">
-                <label class="form-label" for="place-cover">Cover Image URL</label>
-                <input type="text" id="place-cover" class="form-control" v-model="placeForm.coverUrl" placeholder="https://example.com/image.jpg" />
-              </div>
-              <div class="form-group form-grid-full">
-                <label class="form-label" for="place-video">Video Link (YouTube/Vimeo)</label>
-                <input type="text" id="place-video" class="form-control" v-model="placeForm.videoUrl" placeholder="e.g. https://www.youtube.com/watch?v=..." />
-              </div>
-              <div class="form-group form-grid-full">
-                <label class="form-label" for="place-audio">Audio Guide URL (TTS)</label>
-                <input type="text" id="place-audio" class="form-control" v-model="placeForm.audioUrl" placeholder="https://example.com/audio.mp3" />
-              </div>
-              <div class="form-group form-grid-full">
-                <label class="form-label" for="place-summary">Brief Summary (Max 500 chars) *</label>
-                <input type="text" id="place-summary" class="form-control" v-model="placeForm.summary" required placeholder="A short catchphrase or description summary" />
-              </div>
-              <div class="form-group form-grid-full">
-                <label class="form-label" for="place-desc">Full Story/Description</label>
-                <textarea id="place-desc" class="form-control" rows="4" v-model="placeForm.description" placeholder="Detail history, mythology, architecture or guides here..."></textarea>
-              </div>
-              <div class="form-group form-grid-full">
-                <label class="form-label" for="place-tip">Local Tip</label>
-                <input type="text" id="place-tip" class="form-control" v-model="placeForm.localTip" placeholder="e.g. Best photo spots or dress codes" />
-              </div>
-              <div class="form-group form-grid-full">
-                <label class="form-label" for="place-besttime">Best Time to Visit</label>
-                <input type="text" id="place-besttime" class="form-control" v-model="placeForm.bestTime" placeholder="e.g. Early morning or Spring festival" />
+    <!-- Place Dialog/Modal (Teleported to body to avoid stacking context overlapping) -->
+    <Teleport to="body">
+      <div v-if="showPlaceModal" class="modal-overlay" @click.self="showPlaceModal = false">
+        <div class="modal-card modal-premium-card animate-scale-up">
+          <div class="modal-header">
+            <h2>{{ editingPlace ? 'Chỉnh sửa địa danh du lịch' : 'Tạo địa danh mới' }}</h2>
+            <button class="close-btn" @click="showPlaceModal = false">&times;</button>
+          </div>
+          <form @submit.prevent="savePlace">
+            <div class="modal-body">
+              <div class="form-grid">
+                <div class="form-group">
+                  <label class="form-label" for="place-name">Tên địa danh *</label>
+                  <input type="text" id="place-name" class="form-control" v-model="placeForm.name" required placeholder="Ví dụ: Đình Bạch Trữ" />
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="place-category">Danh mục</label>
+                  <select id="place-category" class="form-control" v-model="placeForm.categoryId">
+                    <option value="">-- Không phân loại / Chọn sau --</option>
+                    <option v-for="cat in categories" :key="cat.id" :value="cat.id">
+                      {{ cat.name }}
+                    </option>
+                  </select>
+                  <p v-if="!placeForm.categoryId" class="category-warning">
+                    💡 Gợi ý: Hãy chọn danh mục để địa danh của bạn dễ dàng tìm kiếm và lọc trên bản đồ. Nếu bỏ qua, địa danh vẫn được lưu dưới mục "Chưa phân loại".
+                  </p>
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="place-area">Khu vực bản đồ *</label>
+                  <select id="place-area" class="form-control" v-model="placeForm.areaId" required>
+                    <option value="" disabled>Chọn khu vực</option>
+                    <option v-for="a in areas" :key="a.id" :value="a.id">
+                      {{ a.name }}
+                    </option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="place-price-level">Mức chi phí</label>
+                  <select id="place-price-level" class="form-control" v-model="placeForm.priceLevel">
+                    <option value="FREE">Miễn phí (FREE)</option>
+                    <option value="LOW">Thấp (LOW)</option>
+                    <option value="MEDIUM">Trung bình (MEDIUM)</option>
+                    <option value="HIGH">Cao (HIGH)</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="place-lat">Vĩ độ (Latitude) *</label>
+                  <input type="number" step="0.000001" id="place-lat" class="form-control" v-model.number="placeForm.latitude" required />
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="place-lng">Kinh độ (Longitude) *</label>
+                  <input type="number" step="0.000001" id="place-lng" class="form-control" v-model.number="placeForm.longitude" required />
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="place-min-cost">Chi phí tối thiểu (đ)</label>
+                  <input type="number" id="place-min-cost" class="form-control" v-model.number="placeForm.estimatedMinCost" />
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="place-max-cost">Chi phí tối đa (đ)</label>
+                  <input type="number" id="place-max-cost" class="form-control" v-model.number="placeForm.estimatedMaxCost" />
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="place-duration">Thời gian tham quan ước tính (phút)</label>
+                  <input type="number" id="place-duration" class="form-control" v-model.number="placeForm.averageVisitDurationMinutes" />
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="place-address">Địa chỉ đầy đủ</label>
+                  <input type="text" id="place-address" class="form-control" v-model="placeForm.address" placeholder="Ví dụ: Thôn Bạch Trữ, Xã Tiến Thắng, Mê Linh" />
+                </div>
+                <div class="form-group form-grid-full">
+                  <label class="form-label" for="place-cover">Đường dẫn ảnh bìa</label>
+                  <input type="text" id="place-cover" class="form-control" v-model="placeForm.coverUrl" placeholder="https://example.com/image.jpg" />
+                </div>
+                <div class="form-group form-grid-full">
+                  <label class="form-label" for="place-video">Đường dẫn Video giới thiệu (YouTube/Vimeo)</label>
+                  <input type="text" id="place-video" class="form-control" v-model="placeForm.videoUrl" placeholder="Ví dụ: https://www.youtube.com/watch?v=..." />
+                </div>
+                <div class="form-group form-grid-full">
+                  <label class="form-label" for="place-audio">Đường dẫn Audio thuyết minh (TTS)</label>
+                  <input type="text" id="place-audio" class="form-control" v-model="placeForm.audioUrl" placeholder="https://example.com/audio.mp3" />
+                </div>
+                <div class="form-group form-grid-full">
+                  <label class="form-label" for="place-summary">Tóm tắt ngắn gọn (Tối đa 500 ký tự) *</label>
+                  <input type="text" id="place-summary" class="form-control" v-model="placeForm.summary" required placeholder="Một câu giới thiệu ngắn gọn hấp dẫn về địa danh" />
+                </div>
+                <div class="form-group form-grid-full">
+                  <label class="form-label" for="place-desc">Mô tả đầy đủ / Nội dung câu chuyện</label>
+                  <textarea id="place-desc" class="form-control" rows="4" v-model="placeForm.description" placeholder="Chi tiết về lịch sử, sự tích, nghệ thuật kiến trúc hoặc hướng dẫn tham quan..."></textarea>
+                </div>
+                <div class="form-group form-grid-full">
+                  <label class="form-label" for="place-tip">Mẹo địa phương khi tham quan</label>
+                  <input type="text" id="place-tip" class="form-control" v-model="placeForm.localTip" placeholder="Ví dụ: Điểm check-in đẹp, trang phục nghiêm chỉnh khi vào viếng..." />
+                </div>
+                <div class="form-group form-grid-full">
+                  <label class="form-label" for="place-besttime">Thời gian lý tưởng để ghé thăm</label>
+                  <input type="text" id="place-besttime" class="form-control" v-model="placeForm.bestTime" placeholder="Ví dụ: Sáng sớm hoặc Dịp lễ hội truyền thống đầu xuân" />
+                </div>
               </div>
             </div>
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" @click="showPlaceModal = false">Cancel</button>
-            <button type="submit" class="btn btn-primary" :disabled="modalLoading">
-              {{ modalLoading ? 'Saving...' : 'Save Place' }}
-            </button>
-          </div>
-        </form>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" @click="showPlaceModal = false">Hủy</button>
+              <button type="submit" class="btn btn-primary" :disabled="modalLoading">
+                {{ modalLoading ? 'Đang lưu...' : 'Lưu địa danh' }}
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
-    </div>
+    </Teleport>
+
+    <!-- Category Dialog/Modal (Teleported to body to avoid stacking context overlapping) -->
+    <Teleport to="body">
+      <div v-if="showCategoryModal" class="modal-overlay" @click.self="showCategoryModal = false">
+        <div class="modal-card modal-premium-card modal-sm animate-scale-up">
+          <div class="modal-header">
+            <h2>Thêm danh mục mới</h2>
+            <button class="close-btn" @click="showCategoryModal = false">&times;</button>
+          </div>
+          <form @submit.prevent="saveCategory">
+            <div class="modal-body">
+              <div class="form-grid-single">
+                <div class="form-group">
+                  <label class="form-label" for="cat-name">Tên danh mục *</label>
+                  <input type="text" id="cat-name" class="form-control" v-model="categoryForm.name" required placeholder="Ví dụ: Di tích Lịch sử" @input="autoFillCategoryCode" />
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="cat-code">Mã danh mục * (Chữ cái/Số/Dấu gạch dưới)</label>
+                  <input type="text" id="cat-code" class="form-control" v-model="categoryForm.code" required placeholder="Ví dụ: di_tich_lich_su" />
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="cat-desc">Mô tả danh mục</label>
+                  <textarea id="cat-desc" class="form-control" rows="3" v-model="categoryForm.description" placeholder="Thông tin mô tả danh mục..."></textarea>
+                </div>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" @click="showCategoryModal = false">Hủy</button>
+              <button type="submit" class="btn btn-primary" :disabled="modalLoading">
+                {{ modalLoading ? 'Đang tạo...' : 'Tạo danh mục' }}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </Teleport>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, computed, watch } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 import { api, type Area, type Place, type PlaceCategory } from '../../config/api';
 
+const route = useRoute();
+const router = useRouter();
 const activeTab = ref('places');
 const areas = ref<Area[]>([]);
 const places = ref<Place[]>([]);
 const categories = ref<PlaceCategory[]>([]);
 const loading = ref(false);
 const modalLoading = ref(false);
+
+// Watch for route changes to switch tabs automatically
+watch(() => route.path, (newPath) => {
+  if (newPath.endsWith('/areas')) {
+    activeTab.value = 'areas';
+  } else {
+    activeTab.value = 'places';
+  }
+}, { immediate: true });
+
+const switchTab = (tabName: string) => {
+  activeTab.value = tabName;
+  if (tabName === 'areas') {
+    router.push('/admin/areas');
+  } else {
+    router.push('/admin');
+  }
+};
 
 // Filters
 const searchQuery = ref('');
@@ -435,6 +511,14 @@ const placeForm = ref({
   audioUrl: '',
   localTip: '',
   bestTime: '',
+});
+
+// Category Modal States
+const showCategoryModal = ref(false);
+const categoryForm = ref({
+  name: '',
+  code: '',
+  description: ''
 });
 
 // Computed values
@@ -516,33 +600,33 @@ const saveArea = async () => {
         method: 'PUT',
         body: areaForm.value
       });
-      alert('Area updated successfully!');
+      alert('Cập nhật khu vực thành công!');
     } else {
       await api.request('/admin/areas', {
         method: 'POST',
         body: areaForm.value
       });
-      alert('Area created successfully!');
+      alert('Tạo khu vực thành công!');
     }
     showAreaModal.value = false;
     await loadAllData();
   } catch (error: any) {
-    alert(error.message || 'Failed to save area.');
+    alert(error.message || 'Lỗi khi lưu khu vực.');
   } finally {
     modalLoading.value = false;
   }
 };
 
 const deleteArea = async (area: Area) => {
-  if (confirm(`Are you sure you want to delete Area "${area.name}"? It must not have any places attached.`)) {
+  if (confirm(`Bạn có chắc chắn muốn xóa khu vực "${area.name}"? Khu vực này phải không được chứa địa danh nào.`)) {
     try {
       await api.request(`/admin/areas/${area.id}`, {
         method: 'DELETE'
       });
-      alert('Area deleted!');
+      alert('Đã xóa khu vực!');
       await loadAllData();
     } catch (error: any) {
-      alert(error.message || 'Failed to delete area.');
+      alert(error.message || 'Lỗi khi xóa khu vực.');
     }
   }
 };
@@ -555,7 +639,7 @@ const openPlaceModal = (place?: Place) => {
       name: place.name,
       summary: place.summary || '',
       description: place.description || '',
-      categoryId: place.categoryId,
+      categoryId: place.categoryId || '',
       areaId: place.areaId || '',
       address: place.address || '',
       latitude: place.latitude ? Number(place.latitude) : 21.195,
@@ -576,7 +660,7 @@ const openPlaceModal = (place?: Place) => {
       name: '',
       summary: '',
       description: '',
-      categoryId: categories.value[0]?.id || '',
+      categoryId: '',
       areaId: areas.value.find(a => a.slug === 'tien-thang')?.id || areas.value[0]?.id || '',
       address: '',
       latitude: 21.195,
@@ -600,6 +684,7 @@ const savePlace = async () => {
   try {
     const payload = {
       ...placeForm.value,
+      categoryId: placeForm.value.categoryId || undefined,
       latitude: placeForm.value.latitude ? Number(placeForm.value.latitude) : undefined,
       longitude: placeForm.value.longitude ? Number(placeForm.value.longitude) : undefined,
       estimatedMinCost: placeForm.value.estimatedMinCost ? Number(placeForm.value.estimatedMinCost) : undefined,
@@ -609,28 +694,66 @@ const savePlace = async () => {
     
     if (editingPlace.value) {
       await api.places.update(editingPlace.value.id, payload);
-      alert('Place details updated successfully!');
+      alert('Cập nhật thông tin địa danh thành công!');
     } else {
       await api.places.create(payload);
-      alert('New Place created successfully as DRAFT!');
+      alert('Tạo địa danh mới thành công ở dạng BẢN NHÁP!');
     }
     showPlaceModal.value = false;
     await loadAllData();
   } catch (error: any) {
-    alert(error.message || 'Failed to save place.');
+    alert(error.message || 'Lỗi khi lưu địa danh.');
+  } finally {
+    modalLoading.value = false;
+  }
+};
+
+// Operations: Categories
+const openCategoryModal = () => {
+  categoryForm.value = {
+    name: '',
+    code: '',
+    description: ''
+  };
+  showCategoryModal.value = true;
+};
+
+const autoFillCategoryCode = () => {
+  categoryForm.value.code = categoryForm.value.name
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9\s]/g, '')
+    .trim()
+    .replace(/\s+/g, '_');
+};
+
+const saveCategory = async () => {
+  modalLoading.value = true;
+  try {
+    await api.categories.create(
+      categoryForm.value.code,
+      categoryForm.value.name,
+      categoryForm.value.description
+    );
+    alert('Tạo danh mục mới thành công!');
+    showCategoryModal.value = false;
+    await loadAllData();
+  } catch (error: any) {
+    alert(error.message || 'Lỗi khi tạo danh mục.');
   } finally {
     modalLoading.value = false;
   }
 };
 
 const deletePlace = async (place: Place) => {
-  if (confirm(`Are you sure you want to delete Place "${place.name}"?`)) {
+  if (confirm(`Bạn có chắc muốn xóa địa danh "${place.name}"?`)) {
     try {
       await api.places.delete(place.id);
-      alert('Place deleted successfully!');
+      alert('Xóa địa danh thành công!');
       await loadAllData();
     } catch (error: any) {
-      alert(error.message || 'Failed to delete place.');
+      alert(error.message || 'Lỗi khi xóa địa danh.');
     }
   }
 };
@@ -638,73 +761,151 @@ const deletePlace = async (place: Place) => {
 const publishPlace = async (place: Place) => {
   try {
     await api.places.publish(place.id);
-    alert(`Published "${place.name}" successfully!`);
+    alert(`Công bố "${place.name}" thành công!`);
     await loadAllData();
   } catch (error: any) {
-    alert(error.message || 'Failed to publish place. Ensure Category, Area, Lat, and Lng are set.');
+    alert(error.message || 'Lỗi khi công bố địa danh. Đảm bảo đã thiết lập Danh mục, Vùng bản đồ, và Tọa độ GPS đầy đủ.');
   }
 };
 
 const unpublishPlace = async (place: Place) => {
   try {
     await api.places.unpublish(place.id);
-    alert(`Unpublished "${place.name}" (set back to DRAFT).`);
+    alert(`Đã hạ địa danh "${place.name}" (chuyển lại về BẢN NHÁP).`);
     await loadAllData();
   } catch (error: any) {
-    alert(error.message || 'Failed to unpublish place.');
+    alert(error.message || 'Lỗi khi hạ trạng thái địa danh.');
   }
 };
 </script>
 
 <style scoped>
+/* Premium High-Density Design */
 .admin-dashboard {
-  max-width: 1200px;
+  max-width: 1240px;
   margin: 0 auto;
+  padding: 4px 0;
+}
+
+.gradient-text {
+  background: linear-gradient(135deg, var(--primary), var(--secondary));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-weight: 800;
+  letter-spacing: -0.02em;
 }
 
 .dashboard-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 32px;
+  margin-bottom: 24px;
   flex-wrap: wrap;
   gap: 16px;
 }
 
 .dashboard-header h1 {
-  font-size: 2.2rem;
+  font-size: 1.8rem;
   margin-bottom: 4px;
 }
 
 .subtitle {
   color: var(--text-secondary);
-  font-size: 1rem;
+  font-size: 0.9rem;
+  font-weight: 500;
 }
 
+/* Premium micro buttons */
+.btn-premium {
+  background: linear-gradient(135deg, var(--primary), var(--secondary));
+  color: #ffffff;
+  padding: 8px 16px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  border-radius: var(--radius-md);
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.25);
+  border: none;
+}
+.btn-premium:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(99, 102, 241, 0.35);
+}
+
+.btn-premium-secondary {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  padding: 8px 16px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  border-radius: var(--radius-md);
+}
+.btn-premium-secondary:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+  background-color: rgba(99, 102, 241, 0.04);
+}
+
+.btn-xs {
+  padding: 4px 8px;
+  font-size: 0.775rem;
+  font-weight: 600;
+  border-radius: var(--radius-sm);
+}
+
+/* Stats Cards Grid */
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 24px;
-  margin-bottom: 40px;
+  gap: 18px;
+  margin-bottom: 32px;
 }
 
 .stat-card {
   display: flex;
   align-items: center;
-  gap: 20px;
-  padding: 24px;
+  gap: 16px;
+  padding: 18px 20px;
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  box-shadow: 0 8px 20px -10px rgba(0, 0, 0, 0.04);
+  transition: all var(--transition-normal);
+  position: relative;
+  overflow: hidden;
+}
+
+.stat-card::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(circle at top right, rgba(99, 102, 241, 0.03), transparent 50%);
+  pointer-events: none;
+}
+
+.stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 25px -12px rgba(99, 102, 241, 0.15);
+  border-color: rgba(99, 102, 241, 0.3);
 }
 
 .stat-icon {
-  width: 48px;
-  height: 48px;
-  border-radius: var(--radius-md);
-  background-color: var(--primary-light);
-  color: var(--primary);
+  width: 42px;
+  height: 42px;
+  border-radius: var(--radius-sm);
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  font-size: 1.1rem;
+}
+
+.stat-icon.icon-areas {
+  background-color: rgba(99, 102, 241, 0.1);
+  color: var(--primary);
 }
 
 .stat-icon.icon-places {
@@ -717,70 +918,86 @@ const unpublishPlace = async (place: Place) => {
   color: #f59e0b;
 }
 
-.stat-icon.icon-media {
+.stat-icon.icon-categories {
   background-color: rgba(168, 85, 247, 0.1);
   color: var(--secondary);
 }
 
 .stat-label {
-  font-size: 0.85rem;
-  font-weight: 600;
+  font-size: 0.725rem;
+  font-weight: 700;
   color: var(--text-secondary);
   text-transform: uppercase;
   letter-spacing: 0.05em;
+  display: block;
 }
 
 .stat-value {
-  font-size: 1.6rem;
-  font-weight: 700;
+  font-size: 1.4rem;
+  font-weight: 800;
   margin-top: 2px;
+  color: var(--text-primary);
+  line-height: 1.2;
 }
 
 /* Tabs Bar */
 .tabs-bar {
-  display: flex;
-  gap: 12px;
+  display: inline-flex;
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-color);
+  padding: 4px;
+  border-radius: var(--radius-xl);
   margin-bottom: 24px;
-  border-bottom: 1px solid var(--border-color);
-  padding-bottom: 8px;
+  gap: 4px;
 }
 
 .tab-btn {
   background: none;
   border: none;
-  padding: 10px 20px;
+  padding: 8px 18px;
   font-family: var(--font-heading);
   font-weight: 700;
   color: var(--text-secondary);
   cursor: pointer;
   border-radius: var(--radius-md);
   transition: all var(--transition-fast);
+  font-size: 0.85rem;
 }
 
 .tab-btn:hover {
-  color: var(--primary);
-  background-color: var(--primary-light);
+  color: var(--text-primary);
 }
 
 .tab-btn.active {
   color: #ffffff;
   background: linear-gradient(135deg, var(--primary), var(--secondary));
+  box-shadow: 0 4px 10px rgba(99, 102, 241, 0.2);
 }
 
-/* Tables */
+/* Table card UI */
 .table-card {
   padding: 0;
   overflow: hidden;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
+  box-shadow: 0 8px 24px -12px rgba(0, 0, 0, 0.04);
+  background-color: var(--bg-card);
 }
 
 .table-header {
-  padding: 24px 32px;
+  padding: 16px 24px;
   border-bottom: 1px solid var(--border-color);
   display: flex;
   justify-content: space-between;
   align-items: center;
   flex-wrap: wrap;
-  gap: 16px;
+  gap: 12px;
+  background-color: rgba(255, 255, 255, 0.01);
+}
+
+.table-header h2 {
+  font-size: 1.15rem;
+  font-weight: 800;
 }
 
 .search-filters {
@@ -791,16 +1008,30 @@ const unpublishPlace = async (place: Place) => {
 
 .select-filter {
   padding: 8px 12px;
-  font-size: 0.875rem;
-  min-width: 160px;
+  font-size: 0.825rem;
+  min-width: 150px;
+  border-radius: var(--radius-sm);
   background-color: var(--bg-card);
   border: 1px solid var(--border-color);
   color: var(--text-primary);
+  font-weight: 500;
 }
 
-.form-control-sm {
+.search-box input {
   padding: 8px 12px;
-  font-size: 0.875rem;
+  font-size: 0.825rem;
+  min-width: 200px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-color);
+  background-color: var(--bg-card);
+  color: var(--text-primary);
+}
+
+.search-box input:focus,
+.select-filter:focus {
+  border-color: var(--primary);
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.12);
 }
 
 .table-wrapper {
@@ -813,75 +1044,133 @@ const unpublishPlace = async (place: Place) => {
   text-align: left;
 }
 
-.data-table th, 
-.data-table td {
-  padding: 18px 32px;
-  border-bottom: 1px solid var(--border-color);
-  font-size: 0.95rem;
-}
-
 .data-table th {
+  padding: 12px 20px;
+  border-bottom: 2px solid var(--border-color);
   font-family: var(--font-heading);
   font-weight: 700;
+  font-size: 0.725rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
   color: var(--text-secondary);
-  background-color: var(--bg-app);
+  background-color: rgba(99, 102, 241, 0.02);
+  vertical-align: middle;
+}
+
+.data-table td {
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--border-color);
+  font-size: 0.85rem;
+  color: var(--text-primary);
+  vertical-align: middle;
+}
+
+.data-table tbody tr {
+  transition: background-color var(--transition-fast);
+}
+
+.data-table tbody tr:hover {
+  background-color: rgba(99, 102, 241, 0.012);
 }
 
 .empty-cell {
   text-align: center;
   padding: 40px !important;
-  color: var(--text-secondary);
+  color: var(--text-muted);
   font-style: italic;
+  font-size: 0.85rem;
+}
+
+/* Explicit Width columns to prevent wrapping & align grid lines */
+.col-slug, .col-category, .col-area, .col-coords, .col-status, .col-actions {
+  width: 1%;
+  white-space: nowrap;
 }
 
 .area-name-cell {
   display: flex;
   align-items: center;
-  gap: 16px;
-}
-
-.area-icon {
-  font-size: 1.5rem;
+  gap: 12px;
+  text-align: left;
 }
 
 .place-thumb {
-  width: 48px;
-  height: 48px;
-  border-radius: var(--radius-md);
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-sm);
   background-size: cover;
   background-position: center;
   border: 1px solid var(--border-color);
   flex-shrink: 0;
 }
 
+.area-icon {
+  font-size: 1.1rem;
+  width: 36px;
+  height: 36px;
+  background-color: var(--primary-light);
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
 .area-desc-short {
-  font-size: 0.8rem;
+  font-size: 0.75rem;
   color: var(--text-secondary);
-  font-weight: 400;
   margin-top: 2px;
-  display: -webkit-box;
-  -webkit-line-clamp: 1;
-  -webkit-box-orient: vertical;
+  font-weight: 400;
+  max-width: 260px;
+  white-space: nowrap;
   overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .category-badge {
   display: inline-block;
-  padding: 4px 10px;
-  background-color: var(--primary-light);
+  padding: 3px 10px;
+  background-color: rgba(99, 102, 241, 0.06);
   color: var(--primary);
+  border: 1px solid rgba(99, 102, 241, 0.12);
   border-radius: var(--radius-full);
-  font-size: 0.8rem;
+  font-size: 0.75rem;
   font-weight: 600;
 }
 
+.area-text-badge {
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.coordinate-text {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.8rem;
+  background-color: rgba(0,0,0,0.03);
+  padding: 3px 6px;
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  white-space: nowrap;
+}
+
+.slug-text {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.8rem;
+  color: var(--secondary);
+  white-space: nowrap;
+}
+
+/* Status Badges with glowing dots */
 .badge-status {
   display: inline-flex;
-  padding: 4px 8px;
-  border-radius: var(--radius-sm);
-  font-size: 0.75rem;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+  font-size: 0.7rem;
   font-weight: 700;
-  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
 }
 
 .badge-status.published {
@@ -889,14 +1178,27 @@ const unpublishPlace = async (place: Place) => {
   color: #10b981;
 }
 
+.badge-status.published::before {
+  content: '';
+  width: 5px;
+  height: 5px;
+  background-color: #10b981;
+  border-radius: 50%;
+  box-shadow: 0 0 6px #10b981;
+}
+
 .badge-status.draft {
   background-color: rgba(245, 158, 11, 0.1);
   color: #f59e0b;
 }
 
-.badge-status.hidden {
-  background-color: var(--border-color);
-  color: var(--text-secondary);
+.badge-status.draft::before {
+  content: '';
+  width: 5px;
+  height: 5px;
+  background-color: #f59e0b;
+  border-radius: 50%;
+  box-shadow: 0 0 6px #f59e0b;
 }
 
 .actions-header {
@@ -905,90 +1207,96 @@ const unpublishPlace = async (place: Place) => {
 
 .actions-cell {
   display: flex;
-  gap: 8px;
+  gap: 6px;
   justify-content: flex-end;
+  align-items: center;
 }
 
 .btn-action {
   font-weight: 700;
 }
 
-.btn-sm {
-  padding: 6px 12px;
-  font-size: 0.85rem;
+.btn-edit {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+}
+.btn-edit:hover {
+  background-color: rgba(0, 0, 0, 0.02);
+  border-color: var(--border-hover);
 }
 
-.text-muted {
-  color: var(--text-secondary);
-  font-style: italic;
-  font-size: 0.85rem;
+.btn-delete {
+  background-color: rgba(239, 68, 68, 0.06);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.12);
+}
+.btn-delete:hover {
+  background-color: #ef4444;
+  color: #ffffff;
+  box-shadow: 0 3px 8px rgba(239, 68, 68, 0.15);
 }
 
-/* Modals */
+/* Modals & Premium Glass Overlays */
 .modal-overlay {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(15, 23, 42, 0.6);
-  backdrop-filter: blur(8px);
+  background-color: rgba(9, 13, 22, 0.65);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 1000;
+  z-index: 99999;
   padding: 20px;
 }
 
-.modal-card {
+.modal-card.modal-premium-card {
   background-color: var(--bg-card);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-lg);
   width: 100%;
-  max-width: 750px;
-  max-height: 90vh;
-  overflow-y: auto;
+  max-width: 780px;
+  max-height: 85vh;
+  box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.3);
   display: flex;
   flex-direction: column;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.2);
-  animation: modal-slide-up 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  overflow: hidden;
 }
 
-@keyframes modal-slide-up {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+.modal-card.modal-sm {
+  max-width: 480px;
 }
 
 .modal-header {
-  padding: 24px;
+  padding: 18px 24px;
   border-bottom: 1px solid var(--border-color);
   display: flex;
   justify-content: space-between;
   align-items: center;
+  background-color: rgba(255, 255, 255, 0.01);
   position: sticky;
   top: 0;
-  background-color: var(--bg-card);
   z-index: 10;
 }
 
 .modal-header h2 {
-  font-size: 1.5rem;
+  font-size: 1.25rem;
   font-weight: 800;
+  color: var(--text-primary);
 }
 
 .close-btn {
   background: none;
   border: none;
-  font-size: 1.8rem;
-  color: var(--text-secondary);
+  font-size: 1.6rem;
+  color: var(--text-muted);
   cursor: pointer;
   line-height: 1;
+  transition: color var(--transition-fast);
 }
 
 .close-btn:hover {
@@ -1006,16 +1314,48 @@ const unpublishPlace = async (place: Place) => {
   display: flex;
   justify-content: flex-end;
   gap: 12px;
+  background-color: rgba(255, 255, 255, 0.01);
   position: sticky;
   bottom: 0;
-  background-color: var(--bg-card);
   z-index: 10;
 }
 
+/* Animations */
+.animate-slide-down {
+  animation: slide-down 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-scale-up {
+  animation: scale-up 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes slide-down {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scale-up {
+  from {
+    opacity: 0;
+    transform: scale(0.97) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* Form Styles inside Modal */
 .form-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 20px;
+  gap: 16px;
 }
 
 .form-grid-full {
@@ -1025,33 +1365,66 @@ const unpublishPlace = async (place: Place) => {
 .form-group {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
 }
 
 .form-label {
-  font-size: 0.85rem;
+  font-size: 0.75rem;
   font-weight: 700;
   color: var(--text-secondary);
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
 
+.form-control {
+  padding: 8px 12px;
+  font-size: 0.875rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-color);
+  background-color: var(--bg-card);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  transition: all var(--transition-fast);
+}
+
+.form-control:focus {
+  border-color: var(--primary);
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.12);
+}
+
 .checkbox-group {
-  margin-top: 8px;
+  margin-top: 4px;
 }
 
 .checkbox-group label {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   cursor: pointer;
   font-weight: 600;
+  font-size: 0.85rem;
 }
 
 .checkbox-group input {
-  width: 18px;
-  height: 18px;
+  width: 16px;
+  height: 16px;
   accent-color: var(--primary);
+  cursor: pointer;
+}
+
+.category-warning {
+  font-size: 0.75rem;
+  color: #d97706; /* warm yellow */
+  font-weight: 500;
+  margin-top: 2px;
+  line-height: 1.4;
+}
+
+.form-grid-single {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 
 @media (max-width: 768px) {
@@ -1060,7 +1433,7 @@ const unpublishPlace = async (place: Place) => {
     align-items: flex-start;
   }
   .table-header {
-    padding: 16px;
+    padding: 12px 16px;
     flex-direction: column;
     align-items: stretch;
   }
@@ -1069,7 +1442,7 @@ const unpublishPlace = async (place: Place) => {
   }
   .data-table th, 
   .data-table td {
-    padding: 12px;
+    padding: 10px 16px;
   }
   .form-grid {
     grid-template-columns: 1fr;

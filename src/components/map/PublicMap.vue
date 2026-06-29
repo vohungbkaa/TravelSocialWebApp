@@ -3,7 +3,7 @@
     <div ref="mapContainer" class="map-frame"></div>
     <div v-if="loading" class="map-loader">
       <div class="spinner"></div>
-      <span>Loading vector map...</span>
+      <span>Đang tải bản đồ...</span>
     </div>
   </div>
 </template>

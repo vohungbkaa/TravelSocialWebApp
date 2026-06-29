@@ -15,7 +15,7 @@
         <div class="area-sidebar-header">
           <div class="banner-overlay"></div>
           <div class="header-content">
-            <span class="badge">Điểm đến</span>
+            <span class="badge">Khu vực</span>
             <h2>{{ areaName }}</h2>
             <p class="area-description">{{ areaDescription }}</p>
           </div>
@@ -53,7 +53,7 @@
 
           <!-- Radius Filter -->
           <div class="radius-filter-box">
-            <label for="radius-select" class="radius-label">Bán kính từ trung tâm:</label>
+            <label for="radius-select" class="radius-label">Lọc theo khoảng cách:</label>
             <select id="radius-select" v-model="activeRadius" class="form-control-select">
               <option :value="null">Hiển thị tất cả</option>
               <option :value="1">Trong vòng 1 km</option>
@@ -66,7 +66,7 @@
         <!-- Places List -->
         <div class="places-list">
           <div class="list-header">
-            <h3>Địa điểm tiêu biểu ({{ filteredPlaces.length }})</h3>
+            <h3>Địa điểm nên xem ({{ filteredPlaces.length }})</h3>
           </div>
           
           <div v-if="filteredPlaces.length === 0" class="empty-state">
@@ -111,7 +111,7 @@
           <button 
             class="drawer-toggle-tab" 
             @click="isSheetExpanded = !isSheetExpanded"
-            :aria-label="isSheetExpanded ? 'Collapse details panel' : 'Expand details panel'"
+            :aria-label="isSheetExpanded ? 'Thu gọn thông tin địa điểm' : 'Mở rộng thông tin địa điểm'"
           >
             <svg 
               v-if="isSheetExpanded" 
@@ -144,7 +144,7 @@
               <span class="sheet-category-badge">{{ selectedPlace.category }}</span>
               <h3>{{ selectedPlace.name }}</h3>
             </div>
-            <button class="btn-close-sheet" @click="selectedPlace = null" aria-label="Close sheet">
+            <button class="btn-close-sheet" @click="selectedPlace = null" aria-label="Đóng thông tin địa điểm">
               <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
             </button>
           </div>
@@ -184,7 +184,7 @@
 
             <div class="sheet-meta-fields">
               <div class="meta-field">
-                <strong>Mẹo nhỏ:</strong> {{ selectedPlace.localTip }}
+                <strong>Gợi ý khi tham quan:</strong> {{ selectedPlace.localTip }}
               </div>
             </div>
 
@@ -202,7 +202,7 @@
                 @click="openExploreModal"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
-                Khám phá
+                Xem giới thiệu
               </button>
             </div>
           </div>
@@ -218,7 +218,7 @@
       @click="closeMediaViewer"
     >
       <div class="media-viewer-content" @click.stop>
-        <button class="btn-close-viewer" @click="closeMediaViewer" aria-label="Close viewer">
+        <button class="btn-close-viewer" @click="closeMediaViewer" aria-label="Đóng ảnh hoặc video">
           <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
         </button>
         
@@ -228,7 +228,7 @@
             v-if="activeViewerMedia.type === 'image'" 
             :src="activeViewerMedia.url" 
             class="viewer-img" 
-            alt="Viewer media" 
+            alt="Ảnh địa điểm" 
           />
           
           <!-- Video View -->
@@ -329,7 +329,7 @@
             <p class="explore-text-paragraph">{{ sec.text }}</p>
             <div v-if="sec.imgUrl" class="explore-img-container shadow-md">
               <img :src="sec.imgUrl" class="explore-paragraph-img" alt="Hình ảnh minh họa" />
-              <div class="explore-img-caption">Hình ảnh minh họa cho di tích {{ selectedPlace.name }}</div>
+              <div class="explore-img-caption">Hình ảnh minh họa cho {{ selectedPlace.name }}</div>
             </div>
           </div>
         </div>
@@ -357,7 +357,7 @@ const areaConfig = computed(() => {
   return MAP_CONFIG.areas[areaSlug.value] || MAP_CONFIG.areas[MAP_CONFIG.defaultAreaSlug];
 });
 
-const areaName = computed(() => areaConfig.value?.name || 'Unknown Area');
+const areaName = computed(() => areaConfig.value?.name || 'Khu vực chưa xác định');
 const areaDescription = computed(() => areaConfig.value?.description || '');
 
 interface PlaceWithDistance extends Place {
