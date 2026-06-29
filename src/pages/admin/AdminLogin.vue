@@ -64,6 +64,7 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
+import { api } from '../../config/api';
 
 const router = useRouter();
 const email = ref('');
@@ -72,8 +73,8 @@ const loading = ref(false);
 const errorMessage = ref('');
 
 const fillMockCredentials = () => {
-  email.value = 'admin@localmapstory.com';
-  password.value = 'admin123';
+  email.value = 'admin@travelsocial.xyz';
+  password.value = 'SuperSecureAdminPassword123!';
   errorMessage.value = '';
 };
 
@@ -81,22 +82,17 @@ const handleLogin = async () => {
   loading.value = true;
   errorMessage.value = '';
   
-  // Simulate network request
-  setTimeout(() => {
+  try {
+    await api.auth.login(email.value, password.value);
+    router.push('/admin');
+  } catch (error: any) {
+    errorMessage.value = error.message || 'Invalid credentials or connection error.';
+  } finally {
     loading.value = false;
-    
-    // Very simple check for demo validation
-    if (email.value === 'admin@localmapstory.com' && password.value === 'admin123') {
-      // Set persistent auth flag
-      localStorage.setItem('admin_logged_in', 'true');
-      // Redirect to admin landing
-      router.push('/admin');
-    } else {
-      errorMessage.value = 'Invalid email or password. Use demo credentials button below to fill.';
-    }
-  }, 800);
+  }
 };
 </script>
+
 
 <style scoped>
 .login-container {

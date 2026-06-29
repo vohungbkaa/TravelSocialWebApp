@@ -340,13 +340,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, inject } from 'vue';
+import { ref, computed, watch, inject, onMounted } from 'vue';
 import type { Ref } from 'vue';
 import { useRoute } from 'vue-router';
 import PublicMap from '../../components/map/PublicMap.vue';
 import { mockPlaces } from '../../data/mockPlaces';
-import type { Place, PlaceMedia } from '../../data/mockPlaces';
+import type { Place, PlaceMedia, ExploreSection } from '../../data/mockPlaces';
 import { MAP_CONFIG } from '../../config/map';
+import { api } from '../../config/api';
 
 // Area metadata from route params
 const route = useRoute();
@@ -379,10 +380,86 @@ const drawerWidthClass = computed(() => {
   return 'media-count-3-plus';
 });
 
+// Backend places state
+const backendPlaces = ref<Place[]>([]);
+
+const mapBackendPlace = (p: any): Place => {
+  const mediaList: PlaceMedia[] = [];
+  
+  if (p.videoUrl) {
+    mediaList.push({
+      id: `${p.id}-video`,
+      type: 'video',
+      url: p.videoUrl,
+      provider: p.videoUrl.includes('youtube') || p.videoUrl.includes('youtu.be') ? 'youtube' : 'local',
+      title: `Video giới thiệu ${p.name}`
+    });
+  }
+  
+  if (p.images && p.images.length > 0) {
+    p.images.forEach((img: any, idx: number) => {
+      mediaList.push({
+        id: img.id || `${p.id}-img-${idx}`,
+        type: 'image',
+        url: img.imageUrl,
+        title: img.caption || p.name
+      });
+    });
+  } else if (p.coverUrl) {
+    mediaList.push({
+      id: `${p.id}-cover`,
+      type: 'image',
+      url: p.coverUrl,
+      title: p.name
+    });
+  }
+
+  const exploreSections: ExploreSection[] = [
+    { text: p.summary || '', imgUrl: p.coverUrl || undefined }
+  ];
+  if (p.description) {
+    exploreSections.push({ text: p.description, imgUrl: undefined });
+  }
+
+  return {
+    id: p.id,
+    name: p.name,
+    category: p.category?.name || 'Uncategorized',
+    summary: p.summary || '',
+    description: p.description || '',
+    lat: p.latitude ? Number(p.latitude) : 0,
+    lng: p.longitude ? Number(p.longitude) : 0,
+    coverUrl: p.coverUrl || '/images/image_4.jpeg',
+    bestTime: p.bestTime || '',
+    localTip: p.localTip || '',
+    media: mediaList.length > 0 ? mediaList : undefined,
+    exploreSections: exploreSections
+  };
+};
+
+const loadPlaces = async () => {
+  try {
+    const list = await api.areas.getPlaces(areaSlug.value);
+    if (list && list.length > 0) {
+      backendPlaces.value = list.map(mapBackendPlace);
+    } else {
+      backendPlaces.value = [];
+    }
+  } catch (error) {
+    console.error('Failed to load places from backend API:', error);
+    backendPlaces.value = [];
+  }
+};
+
+onMounted(() => {
+  loadPlaces();
+});
+
 // Reset selection on area change
 watch(areaSlug, () => {
   selectedPlace.value = null;
   isSheetExpanded.value = true;
+  loadPlaces();
 });
 
 // Auto expand sheet on selection
@@ -422,9 +499,14 @@ const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: numbe
   return R * c;
 };
 
+// Fallback to mockPlaces if backend returns nothing
+const activePlacesList = computed(() => {
+  return backendPlaces.value.length > 0 ? backendPlaces.value : mockPlaces;
+});
+
 // Calculate distances from dynamic center
 const placesWithDistance = computed(() => {
-  return mockPlaces.map(place => {
+  return activePlacesList.value.map(place => {
     const distance = calculateDistance(centerCoords.value.lat, centerCoords.value.lng, place.lat, place.lng);
     return {
       ...place,
@@ -435,8 +517,9 @@ const placesWithDistance = computed(() => {
 
 // Dynamic category list from all available places
 const categories = computed(() => {
-  return Array.from(new Set(mockPlaces.map(p => p.category)));
+  return Array.from(new Set(activePlacesList.value.map(p => p.category)));
 });
+
 
 // Apply filters: bounds scope, search, category, and radius
 const filteredPlaces = computed(() => {

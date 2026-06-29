@@ -56,8 +56,8 @@
         </button>
 
         <div class="topbar-user">
-          <div class="avatar">A</div>
-          <span>Administrator</span>
+          <div class="avatar">{{ userInitial }}</div>
+          <span>{{ displayName }}</span>
         </div>
       </header>
 
@@ -74,20 +74,23 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import { useRouter } from 'vue-router';
+import { api } from '../config/api';
 
 const router = useRouter();
 const isSidebarOpen = ref(false);
 
+const user = computed(() => api.auth.getUser());
+const displayName = computed(() => user.value?.displayName || 'Administrator');
+const userInitial = computed(() => displayName.value.charAt(0).toUpperCase());
+
 const handleLogout = () => {
-  // Clear persistent auth flag
-  localStorage.removeItem('admin_logged_in');
-  // Simple logout simulation
-  alert('Simulating log out...');
+  api.auth.logout();
   router.push('/admin/login');
 };
 </script>
+
 
 <style scoped>
 .admin-container {
