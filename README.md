@@ -66,6 +66,8 @@ Nguyen tac: khong dung Google Maps API, khong dung Google tile URL truc tiep, kh
 6. Toi uu mobile, chia se link, SEO co ban.
 
 
+# npm run dev
+
 ## run build
  npm run build 
 
