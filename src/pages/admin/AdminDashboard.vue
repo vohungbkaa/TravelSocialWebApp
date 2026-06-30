@@ -67,11 +67,11 @@
 
     <!-- Tabs Bar -->
     <div class="tabs-bar">
+      <button class="tab-btn" :class="{ active: activeTab === 'areas' }" @click="switchTab('areas')">
+        Khu vực bản đồ
+      </button>
       <button class="tab-btn" :class="{ active: activeTab === 'places' }" @click="switchTab('places')">
         Danh sách địa danh
-      </button>
-      <button class="tab-btn" :class="{ active: activeTab === 'areas' }" @click="switchTab('areas')">
-        Vùng bản đồ
       </button>
       <button class="tab-btn" :class="{ active: activeTab === 'categories' }" @click="switchTab('categories')">
         Danh mục địa danh
@@ -431,7 +431,7 @@
                       />
                       <button 
                         type="button" 
-                        class="btn btn-secondary btn-upload" 
+                        class="btn-geocode-search" 
                         @click="triggerGeocode" 
                         :disabled="isGeocoding"
                       >
@@ -476,7 +476,7 @@
                   </div>
                   <div class="form-group form-grid-full">
                     <label class="form-label" for="place-desc">Mô tả đầy đủ / Nội dung câu chuyện</label>
-                    <textarea id="place-desc" class="form-control" rows="6" v-model="placeForm.description" placeholder="Chi tiết về lịch sử, sự tích, nghệ thuật kiến trúc hoặc hướng dẫn tham quan..."></textarea>
+                    <textarea id="place-desc" class="form-control" rows="12" v-model="placeForm.description" placeholder="Chi tiết về lịch sử, sự tích, nghệ thuật kiến trúc hoặc hướng dẫn tham quan..."></textarea>
                   </div>
                 </div>
               </div>
@@ -2231,13 +2231,13 @@ const unpublishPlace = async (place: Place) => {
   height: calc(90vh - 130px); /* Subtract header and footer */
 }
 .modal-form-column {
-  flex: 1.2;
+  flex: 0.9;
   overflow-y: auto;
   padding: 24px;
   max-height: 100%;
 }
 .modal-map-column {
-  flex: 1;
+  flex: 1.1;
   display: flex;
   flex-direction: column;
   padding: 24px;
@@ -2291,5 +2291,37 @@ const unpublishPlace = async (place: Place) => {
   color: #ef4444;
   margin-left: 3px;
   font-weight: bold;
+}
+.btn-geocode-search {
+  background-color: #f0f9ff;
+  border: 1px solid #bae6fd;
+  color: #0369a1;
+  font-weight: 600;
+  white-space: nowrap;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: var(--radius-md);
+  transition: all var(--transition-fast);
+  cursor: pointer;
+}
+.btn-geocode-search:hover:not(:disabled) {
+  background-color: #e0f2fe;
+  border-color: #7dd3fc;
+  color: #0284c7;
+}
+.btn-geocode-search:disabled {
+  background-color: var(--border-color);
+  color: var(--text-muted);
+  border-color: var(--border-color);
+  cursor: not-allowed;
+}
+.btn-geocode-search i {
+  color: #0284c7;
+}
+.btn-geocode-search:hover:not(:disabled) i {
+  color: #0369a1;
 }
 </style>

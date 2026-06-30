@@ -19,7 +19,7 @@
       </div>
 
       <nav class="sidebar-menu">
-        <router-link to="/admin" class="menu-item" active-class="active" exact-active-class="active">
+        <router-link to="/admin/areas" class="menu-item" active-class="active">
           <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
           Khu vực bản đồ
         </router-link>

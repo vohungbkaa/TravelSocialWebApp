@@ -47,8 +47,7 @@ const routes: Array<RouteRecordRaw> = [
     children: [
       {
         path: '',
-        name: 'AdminDashboard',
-        component: AdminDashboard
+        redirect: '/admin/areas'
       },
       // Placeholder routes for project-setup
       {
