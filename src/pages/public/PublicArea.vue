@@ -347,16 +347,22 @@ import type { Ref } from 'vue';
 import { useRoute } from 'vue-router';
 import PublicMap from '../../components/map/PublicMap.vue';
 import CustomSelect from '../../components/CustomSelect.vue';
-import { mockPlaces } from '../../data/mockPlaces';
 import type { Place, PlaceMedia, ExploreSection } from '../../data/mockPlaces';
 import { MAP_CONFIG } from '../../config/map';
+import type { AreaScope } from '../../config/map';
 import { api } from '../../config/api';
+import type { PlaceCategory } from '../../config/api';
 
 // Area metadata from route params
 const route = useRoute();
 const areaSlug = computed(() => route.params.areaSlug as string || 'ha-noi');
 
-const areaConfig = computed(() => {
+const currentArea = ref<AreaScope | null>(null);
+
+const areaConfig = computed<AreaScope>(() => {
+  if (currentArea.value) {
+    return currentArea.value;
+  }
   return MAP_CONFIG.areas[areaSlug.value] || MAP_CONFIG.areas[MAP_CONFIG.defaultAreaSlug];
 });
 
@@ -385,6 +391,7 @@ const drawerWidthClass = computed(() => {
 
 // Backend places state
 const backendPlaces = ref<Place[]>([]);
+const categoriesList = ref<PlaceCategory[]>([]);
 
 const mapBackendPlace = (p: any): Place => {
   const mediaList: PlaceMedia[] = [];
@@ -440,6 +447,42 @@ const mapBackendPlace = (p: any): Place => {
   };
 };
 
+const loadArea = async () => {
+  try {
+    const area = await api.areas.get(areaSlug.value);
+    if (area) {
+      const lat = Number(area.centerLat);
+      const lng = Number(area.centerLng);
+      const radius = Number(area.defaultRadiusKm) || 3;
+      
+      const latDiff = radius / 111.0;
+      const lngDiff = radius / (111.0 * Math.cos(lat * Math.PI / 180.0));
+      
+      const hardcoded = MAP_CONFIG.areas[area.slug];
+      
+      currentArea.value = {
+        slug: area.slug,
+        name: area.name,
+        provinceCode: area.provinceCode || 'hn',
+        level: hardcoded?.level || 'ward',
+        parentSlug: hardcoded?.parentSlug,
+        center: [lng, lat],
+        zoom: hardcoded?.zoom || 13.5,
+        bounds: hardcoded?.bounds || [
+          [lng - lngDiff, lat - latDiff],
+          [lng + lngDiff, lat + latDiff]
+        ],
+        boundaryGeoJson: hardcoded?.boundaryGeoJson,
+        boundaryGeoJsonUrl: hardcoded?.boundaryGeoJsonUrl,
+        description: area.description || ''
+      };
+    }
+  } catch (error) {
+    console.error('Failed to load area details from backend:', error);
+    currentArea.value = null;
+  }
+};
+
 const loadPlaces = async () => {
   try {
     const list = await api.areas.getPlaces(areaSlug.value);
@@ -454,15 +497,33 @@ const loadPlaces = async () => {
   }
 };
 
+const loadCategories = async () => {
+  try {
+    const list = await api.categories.list();
+    categoriesList.value = list || [];
+  } catch (error) {
+    console.error('Failed to load categories from backend:', error);
+    categoriesList.value = [];
+  }
+};
+
+const loadData = async () => {
+  await Promise.allSettled([
+    loadArea(),
+    loadPlaces(),
+    loadCategories()
+  ]);
+};
+
 onMounted(() => {
-  loadPlaces();
+  loadData();
 });
 
 // Reset selection on area change
 watch(areaSlug, () => {
   selectedPlace.value = null;
   isSheetExpanded.value = true;
-  loadPlaces();
+  loadData();
 });
 
 // Auto expand sheet on selection
@@ -509,9 +570,9 @@ const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: numbe
   return R * c;
 };
 
-// Fallback to mockPlaces if backend returns nothing
+// No fallback to mockPlaces!
 const activePlacesList = computed(() => {
-  return backendPlaces.value.length > 0 ? backendPlaces.value : mockPlaces;
+  return backendPlaces.value;
 });
 
 // Calculate distances from dynamic center
@@ -525,8 +586,11 @@ const placesWithDistance = computed(() => {
   });
 });
 
-// Dynamic category list from all available places
+// Category list from backend place-categories with fallback
 const categories = computed(() => {
+  if (categoriesList.value.length > 0) {
+    return categoriesList.value.map(c => c.name);
+  }
   return Array.from(new Set(activePlacesList.value.map(p => p.category)));
 });
 

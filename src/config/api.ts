@@ -217,13 +217,53 @@ export const api = {
       return api.request<Area[]>('/admin/areas');
     },
 
+    async get(slug: string): Promise<Area> {
+      return api.request<Area>(`/areas/${slug}`);
+    },
+
     async getPlaces(slug: string): Promise<Place[]> {
       return api.request<Place[]>(`/areas/${slug}/places`);
     }
   },
 
-  // Places API (Admin)
+  // Places API
   places: {
+    async list(params?: {
+      q?: string;
+      areaSlug?: string;
+      areaId?: string;
+      category?: string;
+      provinceCode?: string;
+      limit?: number;
+      cursor?: string;
+      sort?: 'newest' | 'rating';
+    }): Promise<{ places: Place[]; nextCursor: string | null }> {
+      const qParams = new URLSearchParams();
+      if (params) {
+        Object.entries(params).forEach(([key, val]) => {
+          if (val !== undefined && val !== null) {
+            qParams.append(key, String(val));
+          }
+        });
+      }
+      const queryString = qParams.toString();
+      return api.request<{ places: Place[]; nextCursor: string | null }>(
+        `/places${queryString ? `?${queryString}` : ''}`
+      );
+    },
+
+    async getPublic(id: string): Promise<Place> {
+      return api.request<Place>(`/places/${id}`);
+    },
+
+    async getPublicBySlug(slug: string): Promise<Place> {
+      return api.request<Place>(`/places/slug/${slug}`);
+    },
+
+    async getImagesPublic(id: string): Promise<PlaceImage[]> {
+      return api.request<PlaceImage[]>(`/places/${id}/images`);
+    },
+
     async listAdmin(): Promise<Place[]> {
       return api.request<Place[]>('/admin/places');
     },
