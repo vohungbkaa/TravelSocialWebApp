@@ -377,7 +377,7 @@
               <div class="modal-form-column">
                 <div class="form-grid">
                   <div class="form-group form-grid-full">
-                    <label class="form-label" for="place-name">Tên địa danh *</label>
+                    <label class="form-label" for="place-name">Tên địa danh <span class="required-star">*</span></label>
                     <input type="text" id="place-name" class="form-control" :class="{ 'has-error': formErrors.placeName }" v-model="placeForm.name" placeholder="Ví dụ: Đình Bạch Trữ" @input="clearError('placeName')" />
                     <span v-if="formErrors.placeName" class="form-error-msg">{{ formErrors.placeName }}</span>
                   </div>
@@ -406,7 +406,7 @@
                     />
                   </div>
                   <div class="form-group">
-                    <label class="form-label" for="place-area">Khu vực bản đồ *</label>
+                    <label class="form-label" for="place-area">Khu vực bản đồ <span class="required-star">*</span></label>
                     <CustomSelect
                       v-model="placeForm.areaId"
                       :options="placeAreaOptions"
@@ -418,15 +418,16 @@
                   </div>
                   
                   <div class="form-group form-grid-full">
-                    <label class="form-label" for="place-address">Địa chỉ</label>
+                    <label class="form-label" for="place-address">Địa chỉ <span class="required-star">*</span></label>
                     <div class="input-upload-group">
                       <input 
                         type="text" 
                         id="place-address" 
                         class="form-control" 
+                        :class="{ 'has-error': formErrors.placeAddress }"
                         v-model="placeForm.address" 
                         placeholder="Ví dụ: Thôn Bạch Trữ, Xã Tiến Thắng, Mê Linh" 
-                        @blur="suggestGeocode"
+                        @input="clearError('placeAddress')"
                       />
                       <button 
                         type="button" 
@@ -438,21 +439,15 @@
                         {{ isGeocoding ? 'Đang tìm...' : 'Tìm tọa độ' }}
                       </button>
                     </div>
+                    <span v-if="formErrors.placeAddress" class="form-error-msg">
+                      {{ formErrors.placeAddress }}
+                    </span>
                     <span v-if="geocodeMessage" :class="geocodeMessageType === 'error' ? 'form-error-msg' : 'form-success-msg'">
                       {{ geocodeMessage }}
                     </span>
                   </div>
 
-                  <div class="form-group">
-                    <label class="form-label" for="place-lat">Vĩ độ (Latitude) *</label>
-                    <input type="number" step="0.000001" id="place-lat" class="form-control" :class="{ 'has-error': formErrors.placeLat }" v-model.number="placeForm.latitude" @input="clearError('placeLat')" />
-                    <span v-if="formErrors.placeLat" class="form-error-msg">{{ formErrors.placeLat }}</span>
-                  </div>
-                  <div class="form-group">
-                    <label class="form-label" for="place-lng">Kinh độ (Longitude) *</label>
-                    <input type="number" step="0.000001" id="place-lng" class="form-control" :class="{ 'has-error': formErrors.placeLng }" v-model.number="placeForm.longitude" @input="clearError('placeLng')" />
-                    <span v-if="formErrors.placeLng" class="form-error-msg">{{ formErrors.placeLng }}</span>
-                  </div>
+
 
                   <div class="form-group form-grid-full">
                     <label class="form-label" for="place-cover">Đường dẫn ảnh bìa</label>
@@ -476,7 +471,7 @@
                   </div>
 
                   <div class="form-group form-grid-full">
-                    <label class="form-label" for="place-summary">Tóm tắt ngắn gọn (Tối đa 500 ký tự) *</label>
+                    <label class="form-label" for="place-summary">Tóm tắt ngắn gọn (Tối đa 500 ký tự) <span class="required-star">*</span></label>
                     <input type="text" id="place-summary" class="form-control" v-model="placeForm.summary" required placeholder="Một câu giới thiệu ngắn gọn hấp dẫn về địa danh" />
                   </div>
                   <div class="form-group form-grid-full">
@@ -488,13 +483,16 @@
 
               <!-- Right side: Sticky interactive map -->
               <div class="modal-map-column">
-                <label class="form-label">Chọn vị trí trực tiếp trên bản đồ</label>
-                <div class="modal-map-wrapper-split">
+                <label class="form-label">Chọn vị trí trực tiếp trên bản đồ <span class="required-star">*</span></label>
+                <div class="modal-map-wrapper-split" :class="{ 'map-has-error': formErrors.placeCoords }">
                   <div ref="modalMapEl" class="modal-map-frame-split"></div>
                   <span class="modal-map-tip">
-                    💡 Click chuột hoặc kéo thả ghim xanh trên bản đồ để tự động điền Kinh/Vĩ độ của địa danh.
+                    💡 Click chuột hoặc kéo thả ghim xanh trên bản đồ để xác định vị trí của địa danh.
                   </span>
                 </div>
+                <span v-if="formErrors.placeCoords" class="form-error-msg" style="margin-top: 8px; font-weight: 600; display: block;">
+                  ⚠️ {{ formErrors.placeCoords }}
+                </span>
               </div>
             </div>
             <div class="modal-footer">
@@ -905,8 +903,8 @@ const openPlaceModal = (place?: Place) => {
       categoryId: '',
       areaId: areas.value.find(a => a.slug === 'tien-thang')?.id || areas.value[0]?.id || '',
       address: '',
-      latitude: 21.195,
-      longitude: 105.6775,
+      latitude: null as any,
+      longitude: null as any,
       priceLevel: 'FREE',
       estimatedMinCost: 0,
       estimatedMaxCost: 0,
@@ -946,8 +944,9 @@ const initModalMap = async () => {
   await nextTick();
   if (!modalMapEl.value) return;
 
-  const lat = placeForm.value.latitude || 21.195;
-  const lng = placeForm.value.longitude || 105.6775;
+  const hasCoords = placeForm.value.latitude && placeForm.value.longitude;
+  const lat = hasCoords ? placeForm.value.latitude : 21.195;
+  const lng = hasCoords ? placeForm.value.longitude : 105.6775;
 
   const config = MAP_CONFIG.areas['tien-thang'];
   const bounds = config ? getPaddedBounds(config.bounds) : undefined;
@@ -1037,8 +1036,8 @@ const initModalMap = async () => {
             type: 'fill',
             source: 'area-boundary-mask',
             paint: {
-              'fill-color': '#f8f7f2', // Matching the positron map style background color
-              'fill-opacity': 1.0     // Fully hides everything outside
+              'fill-color': '#f8f7f2',
+              'fill-opacity': 1.0
             }
           });
         }
@@ -1046,14 +1045,39 @@ const initModalMap = async () => {
         console.error('Failed to load boundary geojson in modal map:', err);
       }
 
-      // 2. Add marker
-      modalMarker.value = new maplibregl.Marker({
-        draggable: true
-      })
-        .setLngLat([lng, lat])
-        .addTo(modalMap.value);
+      // Helper function to create or update the marker
+      const updateMarkerPosition = (markerLng: number, markerLat: number) => {
+        if (!modalMarker.value && modalMap.value) {
+          modalMarker.value = new maplibregl.Marker({
+            draggable: true
+          })
+            .setLngLat([markerLng, markerLat])
+            .addTo(modalMap.value);
 
-      // On click map: move marker and update coordinates
+          modalMarker.value.on('dragend', () => {
+            const lngLat = modalMarker.value?.getLngLat();
+            if (lngLat) {
+              const roundedLat = parseFloat(lngLat.lat.toFixed(6));
+              const roundedLng = parseFloat(lngLat.lng.toFixed(6));
+
+              placeForm.value.latitude = roundedLat;
+              placeForm.value.longitude = roundedLng;
+
+              clearError('placeCoords');
+              geocodeMessage.value = '';
+            }
+          });
+        } else if (modalMarker.value) {
+          modalMarker.value.setLngLat([markerLng, markerLat]);
+        }
+      };
+
+      // 2. Add marker initially only if coordinates are already set
+      if (hasCoords) {
+        updateMarkerPosition(lng, lat);
+      }
+
+      // On click map: move/add marker and update coordinates
       modalMap.value.on('click', (e: any) => {
         const { lng: clickLng, lat: clickLat } = e.lngLat;
         const roundedLat = parseFloat(clickLat.toFixed(6));
@@ -1061,25 +1085,10 @@ const initModalMap = async () => {
 
         placeForm.value.latitude = roundedLat;
         placeForm.value.longitude = roundedLng;
-        modalMarker.value?.setLngLat([roundedLng, roundedLat]);
-
-        clearError('placeLat');
-        clearError('placeLng');
-      });
-
-      // On drag marker: update coordinates
-      modalMarker.value.on('dragend', () => {
-        const lngLat = modalMarker.value?.getLngLat();
-        if (lngLat) {
-          const roundedLat = parseFloat(lngLat.lat.toFixed(6));
-          const roundedLng = parseFloat(lngLat.lng.toFixed(6));
-
-          placeForm.value.latitude = roundedLat;
-          placeForm.value.longitude = roundedLng;
-
-          clearError('placeLat');
-          clearError('placeLng');
-        }
+        
+        updateMarkerPosition(roundedLng, roundedLat);
+        clearError('placeCoords');
+        geocodeMessage.value = '';
       });
     });
 
@@ -1108,12 +1117,33 @@ watch(showPlaceModal, (newVal) => {
 });
 
 watch([() => placeForm.value.latitude, () => placeForm.value.longitude], ([newLat, newLng]) => {
-  if (modalMap.value && modalMarker.value && typeof newLat === 'number' && typeof newLng === 'number' && !isNaN(newLat) && !isNaN(newLng)) {
-    const currentLngLat = modalMarker.value.getLngLat();
-    if (Math.abs(currentLngLat.lat - newLat) > 0.000001 || Math.abs(currentLngLat.lng - newLng) > 0.000001) {
-      modalMarker.value.setLngLat([newLng, newLat]);
-      modalMap.value.setCenter([newLng, newLat]);
+  if (modalMap.value && typeof newLat === 'number' && typeof newLng === 'number' && !isNaN(newLat) && !isNaN(newLng)) {
+    if (!modalMarker.value) {
+      modalMarker.value = new maplibregl.Marker({
+        draggable: true
+      })
+        .setLngLat([newLng, newLat])
+        .addTo(modalMap.value);
+
+      modalMarker.value.on('dragend', () => {
+        const lngLat = modalMarker.value?.getLngLat();
+        if (lngLat) {
+          const roundedLat = parseFloat(lngLat.lat.toFixed(6));
+          const roundedLng = parseFloat(lngLat.lng.toFixed(6));
+
+          placeForm.value.latitude = roundedLat;
+          placeForm.value.longitude = roundedLng;
+
+          clearError('placeCoords');
+        }
+      });
+    } else {
+      const currentLngLat = modalMarker.value.getLngLat();
+      if (Math.abs(currentLngLat.lat - newLat) > 0.000001 || Math.abs(currentLngLat.lng - newLng) > 0.000001) {
+        modalMarker.value.setLngLat([newLng, newLat]);
+      }
     }
+    modalMap.value.setCenter([newLng, newLat]);
   }
 });
 
@@ -1186,11 +1216,7 @@ const triggerGeocode = async () => {
   }
 };
 
-const suggestGeocode = () => {
-  if (placeForm.value.address.trim() && (!placeForm.value.latitude || !placeForm.value.longitude)) {
-    triggerGeocode();
-  }
-};
+
 
 const savePlace = async () => {
   formErrors.value = {};
@@ -1200,11 +1226,11 @@ const savePlace = async () => {
   if (!placeForm.value.areaId) {
     formErrors.value.placeArea = 'Vui lòng chọn khu vực bản đồ';
   }
-  if (placeForm.value.latitude === undefined || placeForm.value.latitude === null || isNaN(placeForm.value.latitude)) {
-    formErrors.value.placeLat = 'Vui lòng nhập vĩ độ';
+  if (!placeForm.value.address.trim()) {
+    formErrors.value.placeAddress = 'Vui lòng nhập địa chỉ địa danh';
   }
-  if (placeForm.value.longitude === undefined || placeForm.value.longitude === null || isNaN(placeForm.value.longitude)) {
-    formErrors.value.placeLng = 'Vui lòng nhập kinh độ';
+  if (!placeForm.value.latitude || !placeForm.value.longitude || isNaN(placeForm.value.latitude) || isNaN(placeForm.value.longitude)) {
+    formErrors.value.placeCoords = 'Vui lòng cắm mốc định vị địa danh trên bản đồ (click chọn vị trí hoặc tìm tọa độ tự động từ địa chỉ).';
   }
   if (Object.keys(formErrors.value).length > 0) {
     return;
@@ -2232,6 +2258,10 @@ const unpublishPlace = async (place: Place) => {
   border: 1px solid var(--border-color);
   overflow: hidden;
 }
+.modal-map-wrapper-split.map-has-error .modal-map-frame-split {
+  border-color: var(--danger);
+  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.15);
+}
 
 @media (max-width: 992px) {
   .modal-card.modal-max-split {
@@ -2256,5 +2286,10 @@ const unpublishPlace = async (place: Place) => {
     padding: 16px;
     height: 350px;
   }
+}
+.required-star {
+  color: #ef4444;
+  margin-left: 3px;
+  font-weight: bold;
 }
 </style>
