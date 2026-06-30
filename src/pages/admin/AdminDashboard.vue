@@ -83,12 +83,13 @@
       <div class="table-header">
         <h2>Quản lý các địa danh du lịch</h2>
         <div class="search-filters">
-          <select v-model="categoryFilter" class="form-control select-filter">
-            <option value="">Tất cả danh mục</option>
-            <option v-for="cat in activeCategories" :key="cat.id" :value="cat.id">
-              {{ cat.name }}
-            </option>
-          </select>
+          <CustomSelect
+            v-model="categoryFilter"
+            :options="categoryFilterOptions"
+            placeholder="Tất cả danh mục"
+            size="sm"
+            style="min-width: 170px;"
+          />
           <div class="search-box">
             <input type="text" v-model="searchQuery" class="form-control" placeholder="Tìm kiếm địa danh..." />
           </div>
@@ -365,13 +366,13 @@
     <!-- Place Dialog/Modal (Teleported to body to avoid stacking context overlapping) -->
     <Teleport to="body">
       <div v-if="showPlaceModal" class="modal-overlay" @click.self="showPlaceModal = false">
-        <div class="modal-card modal-premium-card animate-scale-up">
+        <div id="place-modal-card" class="modal-card modal-premium-card animate-scale-up">
           <div class="modal-header">
             <h2>{{ editingPlace ? 'Chỉnh sửa địa danh du lịch' : 'Tạo địa danh mới' }}</h2>
             <button class="close-btn" @click="showPlaceModal = false">&times;</button>
           </div>
-          <form @submit.prevent="savePlace" novalidate>
-            <div class="modal-body">
+          <form @submit.prevent="savePlace" @click="showCategoryTooltip = false" novalidate>
+            <div class="modal-body" @scroll="updateTooltipPosition">
               <div class="form-grid">
                 <div class="form-group">
                   <label class="form-label" for="place-name">Tên địa danh *</label>
@@ -379,35 +380,46 @@
                   <span v-if="formErrors.placeName" class="form-error-msg">{{ formErrors.placeName }}</span>
                 </div>
                 <div class="form-group">
-                  <label class="form-label" for="place-category">Danh mục</label>
-                  <select id="place-category" class="form-control" :class="{ 'placeholder-selected': !placeForm.categoryId }" v-model="placeForm.categoryId">
-                    <option value="">-- Không phân loại / Chọn sau --</option>
-                    <option v-for="cat in activeCategories" :key="cat.id" :value="cat.id">
-                      {{ cat.name }}
-                    </option>
-                  </select>
-                  <p v-if="!placeForm.categoryId" class="category-warning">
-                    💡 Gợi ý: Hãy chọn danh mục để địa danh của bạn dễ dàng tìm kiếm và lọc trên bản đồ. Nếu bỏ qua, địa danh vẫn được lưu dưới mục "Chưa phân loại".
-                  </p>
+                  <label class="form-label label-with-info" for="place-category">
+                    Danh mục
+                    <span class="info-tooltip-wrapper" @click.prevent.stop>
+                      <svg class="info-icon" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" @click.stop.prevent="showCategoryTooltip = !showCategoryTooltip">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="16" x2="12" y2="12"></line>
+                        <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                      </svg>
+                      <Teleport to="body">
+                        <Transition name="tooltip-fade">
+                          <span v-if="showCategoryTooltip && !placeForm.categoryId" class="info-tooltip" :style="tooltipStyle">
+                            💡 Chọn danh mục giúp địa danh dễ tìm kiếm và lọc hơn.
+                          </span>
+                        </Transition>
+                      </Teleport>
+                    </span>
+                  </label>
+                  <CustomSelect
+                    v-model="placeForm.categoryId"
+                    :options="placeCategoryOptions"
+                    placeholder="-- Không phân loại / Chọn sau --"
+                  />
                 </div>
                 <div class="form-group">
                   <label class="form-label" for="place-area">Khu vực bản đồ *</label>
-                  <select id="place-area" class="form-control" :class="{ 'placeholder-selected': !placeForm.areaId, 'has-error': formErrors.placeArea }" v-model="placeForm.areaId" @change="clearError('placeArea')">
-                    <option value="" disabled>Chọn khu vực</option>
-                    <option v-for="a in areas" :key="a.id" :value="a.id">
-                      {{ a.name }}
-                    </option>
-                  </select>
+                  <CustomSelect
+                    v-model="placeForm.areaId"
+                    :options="placeAreaOptions"
+                    placeholder="Chọn khu vực"
+                    :has-error="!!formErrors.placeArea"
+                    @change="clearError('placeArea')"
+                  />
                   <span v-if="formErrors.placeArea" class="form-error-msg">{{ formErrors.placeArea }}</span>
                 </div>
                 <div class="form-group">
                   <label class="form-label" for="place-price-level">Mức chi phí</label>
-                  <select id="place-price-level" class="form-control" :class="{ 'placeholder-selected': !placeForm.priceLevel }" v-model="placeForm.priceLevel">
-                    <option value="FREE">Miễn phí (FREE)</option>
-                    <option value="LOW">Thấp (LOW)</option>
-                    <option value="MEDIUM">Trung bình (MEDIUM)</option>
-                    <option value="HIGH">Cao (HIGH)</option>
-                  </select>
+                  <CustomSelect
+                    v-model="placeForm.priceLevel"
+                    :options="priceLevelOptions"
+                  />
                 </div>
                 <div class="form-group">
                   <label class="form-label" for="place-lat">Vĩ độ (Latitude) *</label>
@@ -524,9 +536,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed, watch } from 'vue';
+import { ref, onMounted, computed, watch, nextTick } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { api, type Area, type Place, type PlaceCategory } from '../../config/api';
+import CustomSelect from '../../components/CustomSelect.vue';
 
 const route = useRoute();
 const router = useRouter();
@@ -539,6 +552,36 @@ const modalLoading = ref(false);
 
 // Validation States
 const formErrors = ref<Record<string, string>>({});
+const showCategoryTooltip = ref(false);
+const tooltipStyle = ref<Record<string, any>>({});
+
+const updateTooltipPosition = () => {
+  const iconEl = document.querySelector('.info-icon');
+  if (iconEl) {
+    const iconRect = iconEl.getBoundingClientRect();
+    
+    const top = iconRect.bottom + 8;
+    const left = iconRect.left + (iconRect.width / 2);
+    
+    tooltipStyle.value = {
+      position: 'fixed',
+      top: `${top}px`,
+      left: `${left}px`,
+      zIndex: 100000
+    };
+  }
+};
+
+watch(showCategoryTooltip, async (newVal) => {
+  if (newVal) {
+    await nextTick();
+    updateTooltipPosition();
+    // Reposition dynamically as the modal scale-up transition completes
+    setTimeout(updateTooltipPosition, 100);
+    setTimeout(updateTooltipPosition, 300);
+  }
+});
+
 const clearError = (field: string) => {
   if (formErrors.value[field]) {
     delete formErrors.value[field];
@@ -627,6 +670,32 @@ const publishedCount = computed(() => {
 const activeCategories = computed(() => {
   return categories.value.filter(c => c.active !== false);
 });
+
+// CustomSelect Options mapping
+const categoryFilterOptions = computed(() => {
+  return [
+    { value: '', label: 'Tất cả danh mục' },
+    ...activeCategories.value.map(c => ({ value: c.id, label: c.name }))
+  ];
+});
+
+const placeCategoryOptions = computed(() => {
+  return [
+    { value: '', label: '-- Không phân loại / Chọn sau --' },
+    ...activeCategories.value.map(c => ({ value: c.id, label: c.name }))
+  ];
+});
+
+const placeAreaOptions = computed(() => {
+  return areas.value.map(a => ({ value: a.id, label: a.name }));
+});
+
+const priceLevelOptions = [
+  { value: 'FREE', label: 'Miễn phí (FREE)' },
+  { value: 'LOW', label: 'Thấp (LOW)' },
+  { value: 'MEDIUM', label: 'Trung bình (MEDIUM)' },
+  { value: 'HIGH', label: 'Cao (HIGH)' }
+];
 
 const filteredPlaces = computed(() => {
   return places.value.filter(place => {
@@ -782,6 +851,7 @@ const openPlaceModal = (place?: Place) => {
       localTip: place.localTip || '',
       bestTime: place.bestTime || '',
     };
+    showCategoryTooltip.value = false;
   } else {
     editingPlace.value = null;
     placeForm.value = {
@@ -803,6 +873,7 @@ const openPlaceModal = (place?: Place) => {
       localTip: '',
       bestTime: '',
     };
+    showCategoryTooltip.value = false;
   }
   showPlaceModal.value = true;
 };
@@ -1477,6 +1548,14 @@ const unpublishPlace = async (place: Place) => {
   overflow: hidden;
 }
 
+.modal-card.modal-premium-card form {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  height: 100%;
+  max-height: 100%;
+}
+
 .modal-card.modal-sm {
   max-width: 480px;
 }
@@ -1514,8 +1593,10 @@ const unpublishPlace = async (place: Place) => {
 }
 
 .modal-body {
-  padding: 24px;
+  padding: 24px; /* Reverted to standard padding */
   overflow-y: auto;
+  flex: 1;
+  min-height: 0;
 }
 
 .modal-footer {

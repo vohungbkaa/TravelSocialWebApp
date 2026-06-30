@@ -54,12 +54,14 @@
           <!-- Radius Filter -->
           <div class="radius-filter-box">
             <label for="radius-select" class="radius-label">Lọc theo khoảng cách:</label>
-            <select id="radius-select" v-model="activeRadius" class="form-control-select">
-              <option :value="null">Hiển thị tất cả</option>
-              <option :value="1">Trong vòng 1 km</option>
-              <option :value="2">Trong vòng 2 km</option>
-              <option :value="5">Trong vòng 5 km</option>
-            </select>
+            <CustomSelect
+              id="radius-select"
+              v-model="activeRadius"
+              :options="radiusOptions"
+              placeholder="Hiển thị tất cả"
+              size="sm"
+              style="min-width: 140px;"
+            />
           </div>
         </div>
 
@@ -344,6 +346,7 @@ import { ref, computed, watch, inject, onMounted } from 'vue';
 import type { Ref } from 'vue';
 import { useRoute } from 'vue-router';
 import PublicMap from '../../components/map/PublicMap.vue';
+import CustomSelect from '../../components/CustomSelect.vue';
 import { mockPlaces } from '../../data/mockPlaces';
 import type { Place, PlaceMedia, ExploreSection } from '../../data/mockPlaces';
 import { MAP_CONFIG } from '../../config/map';
@@ -473,6 +476,13 @@ watch(selectedPlace, (newVal) => {
 const searchQuery = ref('');
 const activeCategory = ref('all');
 const activeRadius = ref<number | null>(null);
+
+const radiusOptions = [
+  { value: null, label: 'Hiển thị tất cả' },
+  { value: 1, label: 'Trong vòng 1 km' },
+  { value: 2, label: 'Trong vòng 2 km' },
+  { value: 5, label: 'Trong vòng 5 km' }
+];
 
 // Dynamic center coordinates for distance computing
 const centerCoords = computed(() => {

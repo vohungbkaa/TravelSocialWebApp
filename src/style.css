@@ -326,3 +326,90 @@ select.form-control option:disabled {
     transform: translateY(0);
   }
 }
+
+/* Tooltip & Info Icon Styles */
+.label-with-info {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.info-tooltip-wrapper {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.info-icon {
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: color var(--transition-fast);
+  display: inline-flex;
+  align-items: center;
+}
+
+.info-icon:hover {
+  color: var(--primary);
+}
+
+.info-tooltip {
+  position: absolute;
+  bottom: auto;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: var(--bg-card);
+  border: 1px solid var(--primary);
+  color: var(--text-primary);
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  font-size: 0.775rem;
+  font-weight: 500;
+  width: 280px; /* Increased width */
+  white-space: normal;
+  box-shadow: var(--shadow-lg), 0 4px 12px var(--primary-light);
+  z-index: 100;
+  pointer-events: none;
+  line-height: 1.4;
+  text-align: left;
+}
+
+/* Tooltip Arrow Border */
+.info-tooltip::before {
+  content: '';
+  position: absolute;
+  bottom: 100%; /* Pointing up */
+  left: 50%;
+  transform: translateX(-50%);
+  border-width: 6px;
+  border-style: solid;
+  border-color: transparent transparent var(--primary) transparent;
+  z-index: -1;
+}
+
+/* Tooltip Arrow Fill */
+.info-tooltip::after {
+  content: '';
+  position: absolute;
+  bottom: calc(100% - 1px); /* Overlaps border perfectly */
+  left: 50%;
+  transform: translateX(-50%);
+  border-width: 5px;
+  border-style: solid;
+  border-color: transparent transparent var(--bg-card) transparent;
+}
+
+/* Tooltip Transition Animation */
+.tooltip-fade-enter-active {
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.tooltip-fade-leave-active {
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.tooltip-fade-enter-from {
+  opacity: 0;
+  transform: translate(-50%, -8px); /* Slide down from above */
+}
+.tooltip-fade-leave-to {
+  opacity: 0;
+  transform: translate(-50%, -4px);
+}
