@@ -16,6 +16,7 @@ export interface Place {
   id: number;
   name: string;
   category: string;
+  categoryIcon?: string;
   summary: string;
   description: string;
   lat: number;

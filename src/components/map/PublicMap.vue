@@ -202,34 +202,41 @@ const loadBoundaryData = async () => {
 };
 
 // Category specific styling classes
-const getCategoryClass = (category: string) => {
-  const clean = category.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+const getCategoryClass = (place: Place) => {
+  const icon = place.categoryIcon;
+  if (icon === 'landmark') return 'marker-kien-truc';
+  if (icon === 'utensils') return 'marker-am-thuc';
+  if (icon === 'book') return 'marker-lich-su';
+  if (icon === 'masks-theater') return 'marker-van-hoa';
+  if (icon === 'calendar-days') return 'marker-festival';
+  if (icon === 'leaf') return 'marker-nature';
+  if (icon === 'bicycle') return 'marker-activity';
+  
+  // Fallback to name-based matching
+  const clean = place.category.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
   if (clean.includes('kien truc')) return 'marker-kien-truc';
   if (clean.includes('am thuc')) return 'marker-am-thuc';
+  if (clean.includes('lich su')) return 'marker-lich-su';
+  if (clean.includes('van hoa')) return 'marker-van-hoa';
+  if (clean.includes('le hoi')) return 'marker-festival';
   return '';
 };
-// Category custom icon SVG
-const getCategoryIcon = (category: string) => {
+
+// Category custom icon
+const getCategoryIcon = (place: Place) => {
+  const icon = place.categoryIcon || getLegacyIconName(place.category);
+  return `<i class="fa-solid fa-${icon}" style="font-size: 13px; color: #ffffff; display: block;"></i>`;
+};
+
+const getLegacyIconName = (category: string) => {
   const clean = category.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-  if (clean.includes('kien truc')) {
-    return `
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="16" height="16" style="display: block; color: #ffffff;">
-        <path d="M12 2.5a.75.75 0 0 1 .65.375l2.25 3.9a.75.75 0 0 1-.65 1.125h-4.5a.75.75 0 0 1-.65-1.125l2.25-3.9a.75.75 0 0 1 .65-.375ZM5.25 9a.75.75 0 0 1 .75-.75h12a.75.75 0 0 1 .75.75v1.5a.75.75 0 0 1-.75.75H6a.75.75 0 0 1-.75-.75V9ZM7.5 13.5A1.5 1.5 0 0 1 9 12h6a1.5 1.5 0 0 1 1.5 1.5v6.75a.75.75 0 0 1-.75.75h-7.5a.75.75 0 0 1-.75-.75V13.5Zm3.75 3v3.75h1.5V16.5h-1.5Z"/>
-      </svg>
-    `;
-  }
-  if (clean.includes('am thuc')) {
-    return `
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="16" height="16" style="display: block; color: #ffffff;">
-        <circle cx="12" cy="12" r="9" />
-        <path d="M12 3c-1.5 3-1.5 15 0 18" />
-        <path d="M12 3c1.5 3 1.5 15 0 18" />
-        <path d="M3 12c3-1.5 15-1.5 18 0" />
-        <path d="M3 12c3 1.5 15 1.5 18 0" />
-      </svg>
-    `;
-  }
-  return '';
+  if (clean.includes('kien truc')) return 'landmark';
+  if (clean.includes('am thuc')) return 'utensils';
+  if (clean.includes('lich su')) return 'book';
+  if (clean.includes('van hoa')) return 'masks-theater';
+  if (clean.includes('le hoi')) return 'calendar-days';
+  if (clean.includes('nong nghiep') || clean.includes('thien nhien') || clean.includes('dua luoi')) return 'leaf';
+  return 'map-pin';
 };
 // Initialize Map
 onMounted(async () => {
@@ -404,10 +411,10 @@ const updateMarkers = () => {
     const el = document.createElement('div');
     el.className = 'custom-marker-wrapper';
 
-    const catClass = getCategoryClass(place.category);
+    const catClass = getCategoryClass(place);
     const isActive = props.selectedPlace?.id === place.id;
 
-    const catIcon = getCategoryIcon(place.category);
+    const catIcon = getCategoryIcon(place);
 
     el.innerHTML = `
       <div class="custom-pin ${catClass} ${isActive ? 'active' : ''}">
@@ -643,6 +650,15 @@ watch(() => props.selectedPlace, (newPlace) => {
 }
 :deep(.marker-am-thuc) {
   --marker-color: #f59e0b; /* Amber */
+}
+:deep(.marker-festival) {
+  --marker-color: #ec4899; /* Pink */
+}
+:deep(.marker-nature) {
+  --marker-color: #22c55e; /* Green */
+}
+:deep(.marker-activity) {
+  --marker-color: #06b6d4; /* Cyan */
 }
 
 /* Hover and Active states */

@@ -525,8 +525,40 @@
               <div class="form-grid-single">
                 <div class="form-group">
                   <label class="form-label" for="cat-name">Tên danh mục *</label>
-                  <input type="text" id="cat-name" class="form-control" :class="{ 'has-error': formErrors.categoryName }" v-model="categoryForm.name" placeholder="Ví dụ: Di tích Lịch sử" @input="clearError('categoryName'); autoFillCategoryCode()" />
+                  <input type="text" id="cat-name" class="form-control" :class="{ 'has-error': formErrors.categoryName }" v-model="categoryForm.name" placeholder="Ví dụ: Di tích Lịch sử" @input="clearError('categoryName'); autoFillCategoryCode(); autoSuggestIcon()" />
                   <span v-if="formErrors.categoryName" class="form-error-msg">{{ formErrors.categoryName }}</span>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Chọn biểu tượng hiển thị (Icon) *</label>
+                  
+                  <!-- Search box -->
+                  <div class="icon-search-wrapper">
+                    <input 
+                      type="text" 
+                      class="form-control" 
+                      placeholder="Tìm biểu tượng (ví dụ: chùa, phở, lá, xe, camping...)" 
+                      v-model="iconSearchQuery"
+                      @keydown.enter.prevent
+                    />
+                  </div>
+
+                  <!-- Scrollable Grid -->
+                  <div class="icon-selector-scroll-container">
+                    <div class="icon-selector-grid">
+                      <div 
+                        v-for="item in filteredIcons" 
+                        :key="item.value"
+                        class="icon-select-card"
+                        :class="{ active: categoryForm.icon === item.value }"
+                        @click="categoryForm.icon = item.value"
+                      >
+                        <i class="fa-solid" :class="'fa-' + item.value" style="font-size: 1.2rem; width: 24px; text-align: center; color: var(--primary);"></i>
+                        <div class="icon-info">
+                          <span class="icon-title" style="font-size: 0.85rem; font-weight: 500;">{{ item.label.split(' / ')[0] }}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
                 <div class="form-group">
                   <label class="form-label" for="cat-desc">Mô tả danh mục</label>
@@ -671,7 +703,8 @@ const showCategoryModal = ref(false);
 const categoryForm = ref({
   name: '',
   code: '',
-  description: ''
+  description: '',
+  icon: 'landmark'
 });
 
 // Computed values
@@ -936,13 +969,74 @@ const savePlace = async () => {
   }
 };
 
+const allAvailableIcons = [
+  // Kiến trúc / Di tích
+  { value: 'landmark', label: 'Đền chùa / Đình miếu / Di tích cổ kính', cat: 'Kiến trúc / Tâm linh' },
+  { value: 'archway', label: 'Cổng chào / Cổng làng / Di tích lịch sử', cat: 'Kiến trúc' },
+  { value: 'monument', label: 'Tượng đài / Bia đá / Lịch sử danh nhân', cat: 'Lịch sử' },
+  { value: 'museum', label: 'Bảo tàng / Nhà triển lãm / Trưng bày', cat: 'Lịch sử / Văn hóa' },
+  
+  // Ẩm thực
+  { value: 'utensils', label: 'Nhà hàng / Quán ăn / Đặc sản ẩm thực / Ăn uống', cat: 'Ẩm thực' },
+  { value: 'mug-hot', label: 'Quán cà phê / Trà sữa / Tiệm đồ uống', cat: 'Ẩm thực' },
+  
+  // Văn hóa / Lễ hội
+  { value: 'masks-theater', label: 'Làng nghề / Văn hóa truyền thống / Nghệ thuật', cat: 'Văn hóa' },
+  { value: 'calendar-days', label: 'Lễ hội / Sự kiện / Hội làng', cat: 'Văn hóa' },
+  
+  // Thiên nhiên / Sinh thái
+  { value: 'seedling', label: 'Vườn tược / Trang trại / Nông nghiệp sinh thái', cat: 'Sinh thái' },
+  { value: 'mountain', label: 'Núi non / Hang động / Thác nước / Phong cảnh tự nhiên', cat: 'Sinh thái' },
+  { value: 'water', label: 'Sông ngòi / Ao hồ / Suối nguồn / Phong cảnh nước', cat: 'Sinh thái' },
+  { value: 'campground', label: 'Điểm cắm trại / Camping / Dã ngoại ngoài trời', cat: 'Sinh thái' },
+  
+  // Lưu trú / Tiện ích du lịch
+  { value: 'hotel', label: 'Khách sạn / Homestay / Nhà nghỉ / Cơ sở lưu trú', cat: 'Tiện ích' },
+  { value: 'store', label: 'Cửa hàng / Mua sắm lưu niệm / Chợ địa phương', cat: 'Tiện ích' },
+  { value: 'camera', label: 'Điểm check-in / Phong cảnh đẹp / Chụp ảnh lưu niệm', cat: 'Địa danh' }
+];
+
+const iconSearchQuery = ref('');
+
+const filteredIcons = computed(() => {
+  const q = iconSearchQuery.value.trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  if (!q) return allAvailableIcons;
+  return allAvailableIcons.filter(item => {
+    const labelClean = item.label.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    const valClean = item.value.toLowerCase();
+    const catClean = item.cat.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    return labelClean.includes(q) || valClean.includes(q) || catClean.includes(q);
+  });
+});
+
+const autoSuggestIcon = () => {
+  const name = categoryForm.value.name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  if (name.includes('kien truc') || name.includes('chua') || name.includes('dinh') || name.includes('nha co') || name.includes('mieu') || name.includes('den')) {
+    categoryForm.value.icon = 'landmark';
+  } else if (name.includes('am thuc') || name.includes('an uong') || name.includes('dac san') || name.includes('quan') || name.includes('dua')) {
+    categoryForm.value.icon = 'utensils';
+  } else if (name.includes('lich su') || name.includes('di tich') || name.includes('bao tang') || name.includes('tuong dai') || name.includes('co kinh') || name.includes('xua') || name.includes('ngoai xam')) {
+    categoryForm.value.icon = 'book';
+  } else if (name.includes('van hoa') || name.includes('lang nghe') || name.includes('phong tuc') || name.includes('dan gian') || name.includes('truyen thong')) {
+    categoryForm.value.icon = 'masks-theater';
+  } else if (name.includes('le hoi') || name.includes('su kien') || name.includes('hoi lang') || name.includes('trung thu')) {
+    categoryForm.value.icon = 'calendar-days';
+  } else if (name.includes('thien nhien') || name.includes('sinh thai') || name.includes('nong nghiep') || name.includes('dua luoi') || name.includes('vuon') || name.includes('cay') || name.includes('trang trai')) {
+    categoryForm.value.icon = 'leaf';
+  } else if (name.includes('giai tri') || name.includes('trai nghiem') || name.includes('hoat dong') || name.includes('choi') || name.includes('dap xe')) {
+    categoryForm.value.icon = 'bicycle';
+  }
+};
+
 // Operations: Categories
 const openCategoryModal = () => {
   formErrors.value = {};
+  iconSearchQuery.value = '';
   categoryForm.value = {
     name: '',
     code: '',
-    description: ''
+    description: '',
+    icon: 'landmark'
   };
   showCategoryModal.value = true;
 };
@@ -997,7 +1091,8 @@ const saveCategory = async () => {
     await api.categories.create(
       categoryForm.value.name,
       code,
-      categoryForm.value.description
+      categoryForm.value.description,
+      categoryForm.value.icon
     );
     alert('Tạo danh mục mới thành công!');
     showCategoryModal.value = false;
@@ -1569,7 +1664,7 @@ const unpublishPlace = async (place: Place) => {
 }
 
 .modal-card.modal-sm {
-  max-width: 480px;
+  max-width: 720px;
 }
 
 .modal-header {
@@ -1772,5 +1867,55 @@ const unpublishPlace = async (place: Place) => {
   display: flex;
   align-items: center;
   gap: 4px;
+}
+
+.icon-search-wrapper {
+  margin-bottom: 8px;
+}
+.icon-selector-scroll-container {
+  max-height: 250px;
+  overflow-y: auto;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 8px;
+  background-color: rgba(0, 0, 0, 0.05);
+}
+.icon-selector-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 8px;
+}
+.icon-select-card {
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all var(--transition-fast);
+  background-color: var(--bg-card);
+}
+.icon-select-card:hover {
+  border-color: var(--primary);
+  background-color: var(--primary-light);
+}
+.icon-select-card.active {
+  border-color: var(--primary);
+  background-color: var(--primary-light);
+  box-shadow: 0 0 0 2px var(--primary);
+}
+.icon-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.icon-title {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 </style>

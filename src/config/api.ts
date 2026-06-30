@@ -17,6 +17,7 @@ export interface PlaceCategory {
   code?: string;
   name: string;
   description?: string;
+  icon?: string;
   active?: boolean;
 }
 
@@ -192,10 +193,10 @@ export const api = {
       return api.request<PlaceCategory[]>('/place-categories/admin');
     },
 
-    async create(name: string, code?: string, description?: string): Promise<PlaceCategory> {
+    async create(name: string, code?: string, description?: string, icon?: string): Promise<PlaceCategory> {
       return api.request<PlaceCategory>('/place-categories', {
         method: 'POST',
-        body: { name, code, description },
+        body: { name, code, description, icon },
       });
     },
 

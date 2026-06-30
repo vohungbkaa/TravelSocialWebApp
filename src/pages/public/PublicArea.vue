@@ -435,6 +435,7 @@ const mapBackendPlace = (p: any): Place => {
     id: p.id,
     name: p.name,
     category: p.category?.name || 'Uncategorized',
+    categoryIcon: p.category?.icon || '',
     summary: p.summary || '',
     description: p.description || '',
     lat: p.latitude ? Number(p.latitude) : 0,
