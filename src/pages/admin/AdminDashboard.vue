@@ -304,12 +304,13 @@
             <h2>{{ editingArea ? 'Chỉnh sửa vùng câu chuyện' : 'Tạo mới vùng câu chuyện' }}</h2>
             <button class="close-btn" @click="showAreaModal = false">&times;</button>
           </div>
-          <form @submit.prevent="saveArea">
+          <form @submit.prevent="saveArea" novalidate>
             <div class="modal-body">
               <div class="form-grid">
                 <div class="form-group">
                   <label class="form-label" for="area-name">Tên khu vực *</label>
-                  <input type="text" id="area-name" class="form-control" v-model="areaForm.name" required placeholder="Ví dụ: Xã Tiến Thắng" />
+                  <input type="text" id="area-name" class="form-control" :class="{ 'has-error': formErrors.areaName }" v-model="areaForm.name" placeholder="Ví dụ: Xã Tiến Thắng" @input="clearError('areaName')" />
+                  <span v-if="formErrors.areaName" class="form-error-msg">{{ formErrors.areaName }}</span>
                 </div>
                 <div class="form-group">
                   <label class="form-label" for="area-slug">Đường dẫn thân thiện (Slug)</label>
@@ -317,7 +318,8 @@
                 </div>
                 <div class="form-group">
                   <label class="form-label" for="area-province">Mã Tỉnh/Thành phố *</label>
-                  <input type="text" id="area-province" class="form-control" v-model="areaForm.provinceCode" required placeholder="Ví dụ: hn" />
+                  <input type="text" id="area-province" class="form-control" :class="{ 'has-error': formErrors.areaProvince }" v-model="areaForm.provinceCode" placeholder="Ví dụ: hn" @input="clearError('areaProvince')" />
+                  <span v-if="formErrors.areaProvince" class="form-error-msg">{{ formErrors.areaProvince }}</span>
                 </div>
                 <div class="form-group">
                   <label class="form-label" for="area-radius">Bán kính quét mặc định (km)</label>
@@ -325,11 +327,13 @@
                 </div>
                 <div class="form-group">
                   <label class="form-label" for="area-lat">Vĩ độ tâm (Latitude) *</label>
-                  <input type="number" step="0.000001" id="area-lat" class="form-control" v-model.number="areaForm.centerLat" required />
+                  <input type="number" step="0.000001" id="area-lat" class="form-control" :class="{ 'has-error': formErrors.areaLat }" v-model.number="areaForm.centerLat" @input="clearError('areaLat')" />
+                  <span v-if="formErrors.areaLat" class="form-error-msg">{{ formErrors.areaLat }}</span>
                 </div>
                 <div class="form-group">
                   <label class="form-label" for="area-lng">Kinh độ tâm (Longitude) *</label>
-                  <input type="number" step="0.000001" id="area-lng" class="form-control" v-model.number="areaForm.centerLng" required />
+                  <input type="number" step="0.000001" id="area-lng" class="form-control" :class="{ 'has-error': formErrors.areaLng }" v-model.number="areaForm.centerLng" @input="clearError('areaLng')" />
+                  <span v-if="formErrors.areaLng" class="form-error-msg">{{ formErrors.areaLng }}</span>
                 </div>
                 <div class="form-group form-grid-full">
                   <label class="form-label" for="area-cover">Đường dẫn hình ảnh bìa</label>
@@ -366,16 +370,17 @@
             <h2>{{ editingPlace ? 'Chỉnh sửa địa danh du lịch' : 'Tạo địa danh mới' }}</h2>
             <button class="close-btn" @click="showPlaceModal = false">&times;</button>
           </div>
-          <form @submit.prevent="savePlace">
+          <form @submit.prevent="savePlace" novalidate>
             <div class="modal-body">
               <div class="form-grid">
                 <div class="form-group">
                   <label class="form-label" for="place-name">Tên địa danh *</label>
-                  <input type="text" id="place-name" class="form-control" v-model="placeForm.name" required placeholder="Ví dụ: Đình Bạch Trữ" />
+                  <input type="text" id="place-name" class="form-control" :class="{ 'has-error': formErrors.placeName }" v-model="placeForm.name" placeholder="Ví dụ: Đình Bạch Trữ" @input="clearError('placeName')" />
+                  <span v-if="formErrors.placeName" class="form-error-msg">{{ formErrors.placeName }}</span>
                 </div>
                 <div class="form-group">
                   <label class="form-label" for="place-category">Danh mục</label>
-                  <select id="place-category" class="form-control" v-model="placeForm.categoryId">
+                  <select id="place-category" class="form-control" :class="{ 'placeholder-selected': !placeForm.categoryId }" v-model="placeForm.categoryId">
                     <option value="">-- Không phân loại / Chọn sau --</option>
                     <option v-for="cat in activeCategories" :key="cat.id" :value="cat.id">
                       {{ cat.name }}
@@ -387,16 +392,17 @@
                 </div>
                 <div class="form-group">
                   <label class="form-label" for="place-area">Khu vực bản đồ *</label>
-                  <select id="place-area" class="form-control" v-model="placeForm.areaId" required>
+                  <select id="place-area" class="form-control" :class="{ 'placeholder-selected': !placeForm.areaId, 'has-error': formErrors.placeArea }" v-model="placeForm.areaId" @change="clearError('placeArea')">
                     <option value="" disabled>Chọn khu vực</option>
                     <option v-for="a in areas" :key="a.id" :value="a.id">
                       {{ a.name }}
                     </option>
                   </select>
+                  <span v-if="formErrors.placeArea" class="form-error-msg">{{ formErrors.placeArea }}</span>
                 </div>
                 <div class="form-group">
                   <label class="form-label" for="place-price-level">Mức chi phí</label>
-                  <select id="place-price-level" class="form-control" v-model="placeForm.priceLevel">
+                  <select id="place-price-level" class="form-control" :class="{ 'placeholder-selected': !placeForm.priceLevel }" v-model="placeForm.priceLevel">
                     <option value="FREE">Miễn phí (FREE)</option>
                     <option value="LOW">Thấp (LOW)</option>
                     <option value="MEDIUM">Trung bình (MEDIUM)</option>
@@ -405,11 +411,13 @@
                 </div>
                 <div class="form-group">
                   <label class="form-label" for="place-lat">Vĩ độ (Latitude) *</label>
-                  <input type="number" step="0.000001" id="place-lat" class="form-control" v-model.number="placeForm.latitude" required />
+                  <input type="number" step="0.000001" id="place-lat" class="form-control" :class="{ 'has-error': formErrors.placeLat }" v-model.number="placeForm.latitude" @input="clearError('placeLat')" />
+                  <span v-if="formErrors.placeLat" class="form-error-msg">{{ formErrors.placeLat }}</span>
                 </div>
                 <div class="form-group">
                   <label class="form-label" for="place-lng">Kinh độ (Longitude) *</label>
-                  <input type="number" step="0.000001" id="place-lng" class="form-control" v-model.number="placeForm.longitude" required />
+                  <input type="number" step="0.000001" id="place-lng" class="form-control" :class="{ 'has-error': formErrors.placeLng }" v-model.number="placeForm.longitude" @input="clearError('placeLng')" />
+                  <span v-if="formErrors.placeLng" class="form-error-msg">{{ formErrors.placeLng }}</span>
                 </div>
                 <div class="form-group">
                   <label class="form-label" for="place-min-cost">Chi phí tối thiểu (đ)</label>
@@ -488,16 +496,13 @@
             <h2>Thêm danh mục mới</h2>
             <button class="close-btn" @click="showCategoryModal = false">&times;</button>
           </div>
-          <form @submit.prevent="saveCategory">
+          <form @submit.prevent="saveCategory" novalidate>
             <div class="modal-body">
               <div class="form-grid-single">
                 <div class="form-group">
                   <label class="form-label" for="cat-name">Tên danh mục *</label>
-                  <input type="text" id="cat-name" class="form-control" v-model="categoryForm.name" required placeholder="Ví dụ: Di tích Lịch sử" @input="autoFillCategoryCode" />
-                </div>
-                <div class="form-group">
-                  <label class="form-label" for="cat-code">Mã danh mục (tùy chọn - Chữ cái/Số/Dấu gạch dưới)</label>
-                  <input type="text" id="cat-code" class="form-control" v-model="categoryForm.code" placeholder="Ví dụ: di_tich_lich_su" />
+                  <input type="text" id="cat-name" class="form-control" :class="{ 'has-error': formErrors.categoryName }" v-model="categoryForm.name" placeholder="Ví dụ: Di tích Lịch sử" @input="clearError('categoryName'); autoFillCategoryCode()" />
+                  <span v-if="formErrors.categoryName" class="form-error-msg">{{ formErrors.categoryName }}</span>
                 </div>
                 <div class="form-group">
                   <label class="form-label" for="cat-desc">Mô tả danh mục</label>
@@ -531,6 +536,14 @@ const places = ref<Place[]>([]);
 const categories = ref<PlaceCategory[]>([]);
 const loading = ref(false);
 const modalLoading = ref(false);
+
+// Validation States
+const formErrors = ref<Record<string, string>>({});
+const clearError = (field: string) => {
+  if (formErrors.value[field]) {
+    delete formErrors.value[field];
+  }
+};
 
 // Watch for route changes to switch tabs automatically
 watch(() => route.path, (newPath) => {
@@ -658,6 +671,7 @@ const loadAllData = async () => {
 
 // Operations: Areas
 const openAreaModal = (area?: Area) => {
+  formErrors.value = {};
   if (area) {
     editingArea.value = area;
     areaForm.value = {
@@ -689,6 +703,23 @@ const openAreaModal = (area?: Area) => {
 };
 
 const saveArea = async () => {
+  formErrors.value = {};
+  if (!areaForm.value.name.trim()) {
+    formErrors.value.areaName = 'Vui lòng nhập tên khu vực';
+  }
+  if (!areaForm.value.provinceCode.trim()) {
+    formErrors.value.areaProvince = 'Vui lòng nhập mã Tỉnh/Thành phố';
+  }
+  if (areaForm.value.centerLat === undefined || areaForm.value.centerLat === null || isNaN(areaForm.value.centerLat)) {
+    formErrors.value.areaLat = 'Vui lòng nhập vĩ độ tâm';
+  }
+  if (areaForm.value.centerLng === undefined || areaForm.value.centerLng === null || isNaN(areaForm.value.centerLng)) {
+    formErrors.value.areaLng = 'Vui lòng nhập kinh độ tâm';
+  }
+  if (Object.keys(formErrors.value).length > 0) {
+    return;
+  }
+
   modalLoading.value = true;
   try {
     if (editingArea.value) {
@@ -729,6 +760,7 @@ const deleteArea = async (area: Area) => {
 
 // Operations: Places
 const openPlaceModal = (place?: Place) => {
+  formErrors.value = {};
   if (place) {
     editingPlace.value = place;
     placeForm.value = {
@@ -776,6 +808,23 @@ const openPlaceModal = (place?: Place) => {
 };
 
 const savePlace = async () => {
+  formErrors.value = {};
+  if (!placeForm.value.name.trim()) {
+    formErrors.value.placeName = 'Vui lòng nhập tên địa danh';
+  }
+  if (!placeForm.value.areaId) {
+    formErrors.value.placeArea = 'Vui lòng chọn khu vực bản đồ';
+  }
+  if (placeForm.value.latitude === undefined || placeForm.value.latitude === null || isNaN(placeForm.value.latitude)) {
+    formErrors.value.placeLat = 'Vui lòng nhập vĩ độ';
+  }
+  if (placeForm.value.longitude === undefined || placeForm.value.longitude === null || isNaN(placeForm.value.longitude)) {
+    formErrors.value.placeLng = 'Vui lòng nhập kinh độ';
+  }
+  if (Object.keys(formErrors.value).length > 0) {
+    return;
+  }
+
   modalLoading.value = true;
   try {
     const payload = {
@@ -806,6 +855,7 @@ const savePlace = async () => {
 
 // Operations: Categories
 const openCategoryModal = () => {
+  formErrors.value = {};
   categoryForm.value = {
     name: '',
     code: '',
@@ -850,6 +900,14 @@ const uploadMediaFile = async (event: Event, field: 'coverUrl' | 'videoUrl') => 
 };
 
 const saveCategory = async () => {
+  formErrors.value = {};
+  if (!categoryForm.value.name.trim()) {
+    formErrors.value.categoryName = 'Vui lòng nhập tên danh mục';
+  }
+  if (Object.keys(formErrors.value).length > 0) {
+    return;
+  }
+
   modalLoading.value = true;
   try {
     const code = categoryForm.value.code.trim() || undefined;
