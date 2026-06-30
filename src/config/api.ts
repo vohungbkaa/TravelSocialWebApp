@@ -136,6 +136,18 @@ export const api = {
     return resJson.data as T;
   },
 
+  // Upload APIs
+  upload: {
+    async file(file: File): Promise<{ url: string }> {
+      const formData = new FormData();
+      formData.append('file', file);
+      return api.request<{ url: string }>('/upload', {
+        method: 'POST',
+        body: formData,
+      });
+    }
+  },
+
   // Auth APIs
   auth: {
     async login(identifier: string, password: string): Promise<AuthResponse> {

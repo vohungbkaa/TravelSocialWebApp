@@ -429,11 +429,23 @@
                 </div>
                 <div class="form-group form-grid-full">
                   <label class="form-label" for="place-cover">Đường dẫn ảnh bìa</label>
-                  <input type="text" id="place-cover" class="form-control" v-model="placeForm.coverUrl" placeholder="https://example.com/image.jpg" />
+                  <div class="input-upload-group">
+                    <input type="text" id="place-cover" class="form-control" v-model="placeForm.coverUrl" placeholder="https://example.com/image.jpg" />
+                    <button type="button" class="btn btn-secondary btn-upload" @click="coverFileInput?.click()">
+                      📁 Tải ảnh lên
+                    </button>
+                    <input type="file" ref="coverFileInput" style="display: none" accept="image/*" @change="e => uploadMediaFile(e, 'coverUrl')" />
+                  </div>
                 </div>
                 <div class="form-group form-grid-full">
                   <label class="form-label" for="place-video">Đường dẫn Video giới thiệu (YouTube/Vimeo)</label>
-                  <input type="text" id="place-video" class="form-control" v-model="placeForm.videoUrl" placeholder="Ví dụ: https://www.youtube.com/watch?v=..." />
+                  <div class="input-upload-group">
+                    <input type="text" id="place-video" class="form-control" v-model="placeForm.videoUrl" placeholder="Ví dụ: https://www.youtube.com/watch?v=..." />
+                    <button type="button" class="btn btn-secondary btn-upload" @click="videoFileInput?.click()">
+                      📁 Tải video lên
+                    </button>
+                    <input type="file" ref="videoFileInput" style="display: none" accept="video/*" @change="e => uploadMediaFile(e, 'videoUrl')" />
+                  </div>
                 </div>
                 <div class="form-group form-grid-full">
                   <label class="form-label" for="place-audio">Đường dẫn Audio thuyết minh (TTS)</label>
@@ -810,6 +822,31 @@ const autoFillCategoryCode = () => {
     .replace(/[^a-z0-9\s]/g, '')
     .trim()
     .replace(/\s+/g, '_');
+};
+
+const coverFileInput = ref<HTMLInputElement | null>(null);
+const videoFileInput = ref<HTMLInputElement | null>(null);
+
+const uploadMediaFile = async (event: Event, field: 'coverUrl' | 'videoUrl') => {
+  const target = event.target as HTMLInputElement;
+  if (!target.files || target.files.length === 0) return;
+
+  const file = target.files[0];
+  modalLoading.value = true;
+  try {
+    const result = await api.upload.file(file);
+    if (field === 'coverUrl') {
+      placeForm.value.coverUrl = result.url;
+    } else if (field === 'videoUrl') {
+      placeForm.value.videoUrl = result.url;
+    }
+    alert('Tải file lên thành công!');
+  } catch (error: any) {
+    alert(error.message || 'Lỗi khi tải file lên.');
+  } finally {
+    modalLoading.value = false;
+    target.value = '';
+  }
 };
 
 const saveCategory = async () => {
@@ -1569,5 +1606,20 @@ const unpublishPlace = async (place: Place) => {
     flex-direction: column;
     align-items: stretch;
   }
+}
+
+.input-upload-group {
+  display: flex;
+  gap: 8px;
+}
+.input-upload-group .form-control {
+  flex: 1;
+}
+.btn-upload {
+  white-space: nowrap;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
 </style>
