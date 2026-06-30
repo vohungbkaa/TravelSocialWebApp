@@ -13,8 +13,8 @@ export interface AuthResponse {
 }
 
 export interface PlaceCategory {
-  id: string;
-  code: string;
+  id: number;
+  code?: string;
   name: string;
   description?: string;
   active?: boolean;
@@ -51,7 +51,7 @@ export interface Place {
   localTip?: string;
   bestTime?: string;
   priceRange?: string;
-  categoryId: string;
+  categoryId: number;
   address?: string;
   provinceCode?: string;
   districtCode?: string;
@@ -180,14 +180,14 @@ export const api = {
       return api.request<PlaceCategory[]>('/place-categories/admin');
     },
 
-    async create(code: string, name: string, description?: string): Promise<PlaceCategory> {
+    async create(name: string, code?: string, description?: string): Promise<PlaceCategory> {
       return api.request<PlaceCategory>('/place-categories', {
         method: 'POST',
-        body: { code, name, description },
+        body: { name, code, description },
       });
     },
 
-    async updateStatus(id: string, active: boolean): Promise<PlaceCategory> {
+    async updateStatus(id: number, active: boolean): Promise<PlaceCategory> {
       return api.request<PlaceCategory>(`/place-categories/${id}`, {
         method: 'PATCH',
         body: { active },

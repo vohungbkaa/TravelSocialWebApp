@@ -261,7 +261,7 @@
               <td>
                 <strong>{{ cat.name }}</strong>
               </td>
-              <td class="col-slug"><code>{{ cat.code }}</code></td>
+              <td class="col-slug"><code>{{ cat.code || '-' }}</code></td>
               <td>
                 <span class="text-secondary">{{ cat.description || 'Không có mô tả' }}</span>
               </td>
@@ -484,8 +484,8 @@
                   <input type="text" id="cat-name" class="form-control" v-model="categoryForm.name" required placeholder="Ví dụ: Di tích Lịch sử" @input="autoFillCategoryCode" />
                 </div>
                 <div class="form-group">
-                  <label class="form-label" for="cat-code">Mã danh mục * (Chữ cái/Số/Dấu gạch dưới)</label>
-                  <input type="text" id="cat-code" class="form-control" v-model="categoryForm.code" required placeholder="Ví dụ: di_tich_lich_su" />
+                  <label class="form-label" for="cat-code">Mã danh mục (tùy chọn - Chữ cái/Số/Dấu gạch dưới)</label>
+                  <input type="text" id="cat-code" class="form-control" v-model="categoryForm.code" placeholder="Ví dụ: di_tich_lich_su" />
                 </div>
                 <div class="form-group">
                   <label class="form-label" for="cat-desc">Mô tả danh mục</label>
@@ -570,7 +570,7 @@ const placeForm = ref({
   name: '',
   summary: '',
   description: '',
-  categoryId: '',
+  categoryId: '' as string | number,
   areaId: '',
   address: '',
   latitude: 21.195,
@@ -607,7 +607,7 @@ const filteredPlaces = computed(() => {
   return places.value.filter(place => {
     const matchesSearch = place.name.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
       (place.summary && place.summary.toLowerCase().includes(searchQuery.value.toLowerCase()));
-    const matchesCategory = !categoryFilter.value || place.categoryId === categoryFilter.value;
+    const matchesCategory = !categoryFilter.value || place.categoryId === Number(categoryFilter.value);
     return matchesSearch && matchesCategory;
   });
 });
@@ -622,7 +622,7 @@ const filteredAreas = computed(() => {
 const filteredCategories = computed(() => {
   return categories.value.filter(cat => {
     return cat.name.toLowerCase().includes(categorySearchQuery.value.toLowerCase()) ||
-      cat.code.toLowerCase().includes(categorySearchQuery.value.toLowerCase());
+      (cat.code && cat.code.toLowerCase().includes(categorySearchQuery.value.toLowerCase()));
   });
 });
 
@@ -768,7 +768,7 @@ const savePlace = async () => {
   try {
     const payload = {
       ...placeForm.value,
-      categoryId: placeForm.value.categoryId || undefined,
+      categoryId: placeForm.value.categoryId ? Number(placeForm.value.categoryId) : undefined,
       latitude: placeForm.value.latitude ? Number(placeForm.value.latitude) : undefined,
       longitude: placeForm.value.longitude ? Number(placeForm.value.longitude) : undefined,
       estimatedMinCost: placeForm.value.estimatedMinCost ? Number(placeForm.value.estimatedMinCost) : undefined,
@@ -815,9 +815,10 @@ const autoFillCategoryCode = () => {
 const saveCategory = async () => {
   modalLoading.value = true;
   try {
+    const code = categoryForm.value.code.trim() || undefined;
     await api.categories.create(
-      categoryForm.value.code,
       categoryForm.value.name,
+      code,
       categoryForm.value.description
     );
     alert('Tạo danh mục mới thành công!');
