@@ -316,6 +316,15 @@ select.form-control option:disabled {
   animation: formErrorFadeIn 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+.form-success-msg {
+  color: #10b981;
+  font-size: 0.775rem;
+  font-weight: 600;
+  margin-top: 4px;
+  display: block;
+  animation: formErrorFadeIn 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
 @keyframes formErrorFadeIn {
   from {
     opacity: 0;

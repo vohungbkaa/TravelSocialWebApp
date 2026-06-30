@@ -366,139 +366,135 @@
     <!-- Place Dialog/Modal (Teleported to body to avoid stacking context overlapping) -->
     <Teleport to="body">
       <div v-if="showPlaceModal" class="modal-overlay" @click.self="showPlaceModal = false">
-        <div id="place-modal-card" class="modal-card modal-premium-card animate-scale-up">
+        <div id="place-modal-card" class="modal-card modal-premium-card modal-max-split animate-scale-up">
           <div class="modal-header">
             <h2>{{ editingPlace ? 'Chỉnh sửa địa danh du lịch' : 'Tạo địa danh mới' }}</h2>
             <button class="close-btn" @click="showPlaceModal = false">&times;</button>
           </div>
           <form @submit.prevent="savePlace" @click="showCategoryTooltip = false" novalidate>
-            <div class="modal-body" @scroll="updateTooltipPosition">
-              <div class="form-grid">
-                <div class="form-group form-grid-full">
-                  <label class="form-label" for="place-name">Tên địa danh *</label>
-                  <input type="text" id="place-name" class="form-control" :class="{ 'has-error': formErrors.placeName }" v-model="placeForm.name" placeholder="Ví dụ: Đình Bạch Trữ" @input="clearError('placeName')" />
-                  <span v-if="formErrors.placeName" class="form-error-msg">{{ formErrors.placeName }}</span>
-                </div>
-                <div class="form-group">
-                  <label class="form-label label-with-info" for="place-category">
-                    Danh mục
-                    <span class="info-tooltip-wrapper" @click.prevent.stop>
-                      <svg class="info-icon" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" @click.stop.prevent="showCategoryTooltip = !showCategoryTooltip">
-                        <circle cx="12" cy="12" r="10"></circle>
-                        <line x1="12" y1="16" x2="12" y2="12"></line>
-                        <line x1="12" y1="8" x2="12.01" y2="8"></line>
-                      </svg>
-                      <Teleport to="body">
-                        <Transition name="tooltip-fade">
-                          <span v-if="showCategoryTooltip && !placeForm.categoryId" class="info-tooltip" :style="tooltipStyle">
-                            💡 Chọn danh mục giúp địa danh dễ tìm kiếm và lọc hơn.
-                          </span>
-                        </Transition>
-                      </Teleport>
+            <div class="modal-body split-modal-body" @scroll="updateTooltipPosition">
+              <!-- Left side: Form Inputs (Scrollable) -->
+              <div class="modal-form-column">
+                <div class="form-grid">
+                  <div class="form-group form-grid-full">
+                    <label class="form-label" for="place-name">Tên địa danh *</label>
+                    <input type="text" id="place-name" class="form-control" :class="{ 'has-error': formErrors.placeName }" v-model="placeForm.name" placeholder="Ví dụ: Đình Bạch Trữ" @input="clearError('placeName')" />
+                    <span v-if="formErrors.placeName" class="form-error-msg">{{ formErrors.placeName }}</span>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label label-with-info" for="place-category">
+                      Danh mục
+                      <span class="info-tooltip-wrapper" @click.prevent.stop>
+                        <svg class="info-icon" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" @click.stop.prevent="showCategoryTooltip = !showCategoryTooltip">
+                          <circle cx="12" cy="12" r="10"></circle>
+                          <line x1="12" y1="16" x2="12" y2="12"></line>
+                          <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                        </svg>
+                        <Teleport to="body">
+                          <Transition name="tooltip-fade">
+                            <span v-if="showCategoryTooltip && !placeForm.categoryId" class="info-tooltip" :style="tooltipStyle">
+                              💡 Chọn danh mục giúp địa danh dễ tìm kiếm và lọc hơn.
+                            </span>
+                          </Transition>
+                        </Teleport>
+                      </span>
+                    </label>
+                    <CustomSelect
+                      v-model="placeForm.categoryId"
+                      :options="placeCategoryOptions"
+                      placeholder="-- Không phân loại / Chọn sau --"
+                    />
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label" for="place-area">Khu vực bản đồ *</label>
+                    <CustomSelect
+                      v-model="placeForm.areaId"
+                      :options="placeAreaOptions"
+                      placeholder="Chọn khu vực"
+                      :has-error="!!formErrors.placeArea"
+                      @change="clearError('placeArea')"
+                    />
+                    <span v-if="formErrors.placeArea" class="form-error-msg">{{ formErrors.placeArea }}</span>
+                  </div>
+                  
+                  <div class="form-group form-grid-full">
+                    <label class="form-label" for="place-address">Địa chỉ</label>
+                    <div class="input-upload-group">
+                      <input 
+                        type="text" 
+                        id="place-address" 
+                        class="form-control" 
+                        v-model="placeForm.address" 
+                        placeholder="Ví dụ: Thôn Bạch Trữ, Xã Tiến Thắng, Mê Linh" 
+                        @blur="suggestGeocode"
+                      />
+                      <button 
+                        type="button" 
+                        class="btn btn-secondary btn-upload" 
+                        @click="triggerGeocode" 
+                        :disabled="isGeocoding"
+                      >
+                        <i class="fa-solid" :class="isGeocoding ? 'fa-spinner fa-spin' : 'fa-magnifying-glass-location'"></i>
+                        {{ isGeocoding ? 'Đang tìm...' : 'Tìm tọa độ' }}
+                      </button>
+                    </div>
+                    <span v-if="geocodeMessage" :class="geocodeMessageType === 'error' ? 'form-error-msg' : 'form-success-msg'">
+                      {{ geocodeMessage }}
                     </span>
-                  </label>
-                  <CustomSelect
-                    v-model="placeForm.categoryId"
-                    :options="placeCategoryOptions"
-                    placeholder="-- Không phân loại / Chọn sau --"
-                  />
-                </div>
-                <div class="form-group">
-                  <label class="form-label" for="place-area">Khu vực bản đồ *</label>
-                  <CustomSelect
-                    v-model="placeForm.areaId"
-                    :options="placeAreaOptions"
-                    placeholder="Chọn khu vực"
-                    :has-error="!!formErrors.placeArea"
-                    @change="clearError('placeArea')"
-                  />
-                  <span v-if="formErrors.placeArea" class="form-error-msg">{{ formErrors.placeArea }}</span>
-                </div>
-                <!-- Temporarily Hidden Price Level -->
-                <!--
-                <div class="form-group">
-                  <label class="form-label" for="place-price-level">Mức chi phí</label>
-                  <CustomSelect
-                    v-model="placeForm.priceLevel"
-                    :options="priceLevelOptions"
-                  />
-                </div>
-                -->
-                <div class="form-group form-grid-full">
-                  <label class="form-label" for="place-address">Địa chỉ</label>
-                  <input type="text" id="place-address" class="form-control" v-model="placeForm.address" placeholder="Ví dụ: Thôn Bạch Trữ, Xã Tiến Thắng, Mê Linh" />
-                </div>
-                <div class="form-group">
-                  <label class="form-label" for="place-lat">Vĩ độ (Latitude) *</label>
-                  <input type="number" step="0.000001" id="place-lat" class="form-control" :class="{ 'has-error': formErrors.placeLat }" v-model.number="placeForm.latitude" @input="clearError('placeLat')" />
-                  <span v-if="formErrors.placeLat" class="form-error-msg">{{ formErrors.placeLat }}</span>
-                </div>
-                <div class="form-group">
-                  <label class="form-label" for="place-lng">Kinh độ (Longitude) *</label>
-                  <input type="number" step="0.000001" id="place-lng" class="form-control" :class="{ 'has-error': formErrors.placeLng }" v-model.number="placeForm.longitude" @input="clearError('placeLng')" />
-                  <span v-if="formErrors.placeLng" class="form-error-msg">{{ formErrors.placeLng }}</span>
-                </div>
-                <!-- Temporarily Hidden Min/Max Costs and Duration -->
-                <!--
-                <div class="form-group">
-                  <label class="form-label" for="place-min-cost">Chi phí tối thiểu (đ)</label>
-                  <input type="number" id="place-min-cost" class="form-control" v-model.number="placeForm.estimatedMinCost" />
-                </div>
-                <div class="form-group">
-                  <label class="form-label" for="place-max-cost">Chi phí tối đa (đ)</label>
-                  <input type="number" id="place-max-cost" class="form-control" v-model.number="placeForm.estimatedMaxCost" />
-                </div>
-                <div class="form-group">
-                  <label class="form-label" for="place-duration">Thời gian tham quan ước tính (phút)</label>
-                  <input type="number" id="place-duration" class="form-control" v-model.number="placeForm.averageVisitDurationMinutes" />
-                </div>
-                -->
-                <div class="form-group form-grid-full">
-                  <label class="form-label" for="place-cover">Đường dẫn ảnh bìa</label>
-                  <div class="input-upload-group">
-                    <input type="text" id="place-cover" class="form-control" v-model="placeForm.coverUrl" placeholder="https://example.com/image.jpg" />
-                    <button type="button" class="btn btn-secondary btn-upload" @click="coverFileInput?.click()">
-                      📁 Tải ảnh lên
-                    </button>
-                    <input type="file" ref="coverFileInput" style="display: none" accept="image/*" @change="e => uploadMediaFile(e, 'coverUrl')" />
+                  </div>
+
+                  <div class="form-group">
+                    <label class="form-label" for="place-lat">Vĩ độ (Latitude) *</label>
+                    <input type="number" step="0.000001" id="place-lat" class="form-control" :class="{ 'has-error': formErrors.placeLat }" v-model.number="placeForm.latitude" @input="clearError('placeLat')" />
+                    <span v-if="formErrors.placeLat" class="form-error-msg">{{ formErrors.placeLat }}</span>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label" for="place-lng">Kinh độ (Longitude) *</label>
+                    <input type="number" step="0.000001" id="place-lng" class="form-control" :class="{ 'has-error': formErrors.placeLng }" v-model.number="placeForm.longitude" @input="clearError('placeLng')" />
+                    <span v-if="formErrors.placeLng" class="form-error-msg">{{ formErrors.placeLng }}</span>
+                  </div>
+
+                  <div class="form-group form-grid-full">
+                    <label class="form-label" for="place-cover">Đường dẫn ảnh bìa</label>
+                    <div class="input-upload-group">
+                      <input type="text" id="place-cover" class="form-control" v-model="placeForm.coverUrl" placeholder="https://example.com/image.jpg" />
+                      <button type="button" class="btn btn-secondary btn-upload" @click="coverFileInput?.click()">
+                        📁 Tải ảnh
+                      </button>
+                      <input type="file" ref="coverFileInput" style="display: none" accept="image/*" @change="e => uploadMediaFile(e, 'coverUrl')" />
+                    </div>
+                  </div>
+                  <div class="form-group form-grid-full">
+                    <label class="form-label" for="place-video">Đường dẫn Video giới thiệu (YouTube/Vimeo)</label>
+                    <div class="input-upload-group">
+                      <input type="text" id="place-video" class="form-control" v-model="placeForm.videoUrl" placeholder="Ví dụ: https://www.youtube.com/watch?v=..." />
+                      <button type="button" class="btn btn-secondary btn-upload" @click="videoFileInput?.click()">
+                        📁 Tải video
+                      </button>
+                      <input type="file" ref="videoFileInput" style="display: none" accept="video/*" @change="e => uploadMediaFile(e, 'videoUrl')" />
+                    </div>
+                  </div>
+
+                  <div class="form-group form-grid-full">
+                    <label class="form-label" for="place-summary">Tóm tắt ngắn gọn (Tối đa 500 ký tự) *</label>
+                    <input type="text" id="place-summary" class="form-control" v-model="placeForm.summary" required placeholder="Một câu giới thiệu ngắn gọn hấp dẫn về địa danh" />
+                  </div>
+                  <div class="form-group form-grid-full">
+                    <label class="form-label" for="place-desc">Mô tả đầy đủ / Nội dung câu chuyện</label>
+                    <textarea id="place-desc" class="form-control" rows="6" v-model="placeForm.description" placeholder="Chi tiết về lịch sử, sự tích, nghệ thuật kiến trúc hoặc hướng dẫn tham quan..."></textarea>
                   </div>
                 </div>
-                <div class="form-group form-grid-full">
-                  <label class="form-label" for="place-video">Đường dẫn Video giới thiệu (YouTube/Vimeo)</label>
-                  <div class="input-upload-group">
-                    <input type="text" id="place-video" class="form-control" v-model="placeForm.videoUrl" placeholder="Ví dụ: https://www.youtube.com/watch?v=..." />
-                    <button type="button" class="btn btn-secondary btn-upload" @click="videoFileInput?.click()">
-                      📁 Tải video lên
-                    </button>
-                    <input type="file" ref="videoFileInput" style="display: none" accept="video/*" @change="e => uploadMediaFile(e, 'videoUrl')" />
-                  </div>
+              </div>
+
+              <!-- Right side: Sticky interactive map -->
+              <div class="modal-map-column">
+                <label class="form-label">Chọn vị trí trực tiếp trên bản đồ</label>
+                <div class="modal-map-wrapper-split">
+                  <div ref="modalMapEl" class="modal-map-frame-split"></div>
+                  <span class="modal-map-tip">
+                    💡 Click chuột hoặc kéo thả ghim xanh trên bản đồ để tự động điền Kinh/Vĩ độ của địa danh.
+                  </span>
                 </div>
-                <!-- Temporarily Hidden Audio URL -->
-                <!--
-                <div class="form-group form-grid-full">
-                  <label class="form-label" for="place-audio">Đường dẫn Audio thuyết minh (TTS)</label>
-                  <input type="text" id="place-audio" class="form-control" v-model="placeForm.audioUrl" placeholder="https://example.com/audio.mp3" />
-                </div>
-                -->
-                <div class="form-group form-grid-full">
-                  <label class="form-label" for="place-summary">Tóm tắt ngắn gọn (Tối đa 500 ký tự) *</label>
-                  <input type="text" id="place-summary" class="form-control" v-model="placeForm.summary" required placeholder="Một câu giới thiệu ngắn gọn hấp dẫn về địa danh" />
-                </div>
-                <div class="form-group form-grid-full">
-                  <label class="form-label" for="place-desc">Mô tả đầy đủ / Nội dung câu chuyện</label>
-                  <textarea id="place-desc" class="form-control" rows="4" v-model="placeForm.description" placeholder="Chi tiết về lịch sử, sự tích, nghệ thuật kiến trúc hoặc hướng dẫn tham quan..."></textarea>
-                </div>
-                <!-- Temporarily Hidden Local Tips and Best Time to Visit -->
-                <!--
-                <div class="form-group form-grid-full">
-                  <label class="form-label" for="place-tip">Mẹo địa phương khi tham quan</label>
-                  <input type="text" id="place-tip" class="form-control" v-model="placeForm.localTip" placeholder="Ví dụ: Điểm check-in đẹp, trang phục nghiêm chỉnh khi vào viếng..." />
-                </div>
-                <div class="form-group form-grid-full">
-                  <label class="form-label" for="place-besttime">Thời gian lý tưởng để ghé thăm</label>
-                  <input type="text" id="place-besttime" class="form-control" v-model="placeForm.bestTime" placeholder="Ví dụ: Sáng sớm hoặc Dịp lễ hội truyền thống đầu xuân" />
-                </div>
-                -->
               </div>
             </div>
             <div class="modal-footer">
@@ -580,10 +576,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed, watch, nextTick } from 'vue';
+import { ref, shallowRef, onMounted, computed, watch, nextTick } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { api, type Area, type Place, type PlaceCategory } from '../../config/api';
 import CustomSelect from '../../components/CustomSelect.vue';
+import maplibregl from 'maplibre-gl';
+import 'maplibre-gl/dist/maplibre-gl.css';
+import { MAP_CONFIG } from '../../config/map';
 
 const route = useRoute();
 const router = useRouter();
@@ -920,7 +919,277 @@ const openPlaceModal = (place?: Place) => {
     };
     showCategoryTooltip.value = false;
   }
+  geocodeMessage.value = '';
+  isGeocoding.value = false;
   showPlaceModal.value = true;
+};
+
+const isGeocoding = ref(false);
+const geocodeMessage = ref('');
+const geocodeMessageType = ref<'success' | 'error'>('success');
+
+const modalMap = shallowRef<maplibregl.Map | null>(null);
+const modalMarker = shallowRef<maplibregl.Marker | null>(null);
+const modalMapEl = ref<HTMLElement | null>(null);
+
+const getPaddedBounds = (bounds: [[number, number], [number, number]], padding: number = 0.05) => {
+  const [[west, south], [east, north]] = bounds;
+  const latPadding = (north - south) * padding;
+  const lngPadding = (east - west) * padding;
+  return [
+    [west - lngPadding, south - latPadding],
+    [east + lngPadding, north + latPadding]
+  ] as [[number, number], [number, number]];
+};
+
+const initModalMap = async () => {
+  await nextTick();
+  if (!modalMapEl.value) return;
+
+  const lat = placeForm.value.latitude || 21.195;
+  const lng = placeForm.value.longitude || 105.6775;
+
+  const config = MAP_CONFIG.areas['tien-thang'];
+  const bounds = config ? getPaddedBounds(config.bounds) : undefined;
+
+  try {
+    modalMap.value = new maplibregl.Map({
+      container: modalMapEl.value,
+      style: MAP_CONFIG.styleUrl,
+      center: [lng, lat],
+      zoom: 13,
+      minZoom: 12.0,
+      maxZoom: 18,
+      maxBounds: bounds,
+      attributionControl: false
+    });
+
+    modalMap.value.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right');
+
+    modalMap.value.on('load', async () => {
+      if (!modalMap.value) return;
+
+      // 1. Fetch boundary GeoJSON and add layers
+      try {
+        const responseGeoJson = await fetch('/data/tien-thang.geojson');
+        if (responseGeoJson.ok) {
+          const boundaryData = await responseGeoJson.json();
+
+          modalMap.value.addSource('area-boundary', {
+            type: 'geojson',
+            data: boundaryData
+          });
+          
+          modalMap.value.addLayer({
+            id: 'area-boundary-fill',
+            type: 'fill',
+            source: 'area-boundary',
+            paint: {
+              'fill-color': '#10b981',
+              'fill-opacity': 0.01
+            }
+          });
+          
+          modalMap.value.addLayer({
+            id: 'area-boundary-line',
+            type: 'line',
+            source: 'area-boundary',
+            paint: {
+              'line-color': '#10b981',
+              'line-width': 2.5,
+              'line-opacity': 0.9,
+              'line-dasharray': [2, 2]
+            }
+          });
+
+          // Inverted mask to fade out surrounding areas
+          const outerRing = [[-180, -90], [180, -90], [180, 90], [-180, 90], [-180, -90]];
+          let maskCoordinates: any[] = [outerRing];
+          
+          if (boundaryData.geometry.type === 'Polygon') {
+            boundaryData.geometry.coordinates.forEach((ring: any) => {
+              maskCoordinates.push(ring);
+            });
+          } else if (boundaryData.geometry.type === 'MultiPolygon') {
+            boundaryData.geometry.coordinates.forEach((polygon: any) => {
+              polygon.forEach((ring: any) => {
+                maskCoordinates.push(ring);
+              });
+            });
+          }
+
+          const maskGeoJson = {
+            type: 'Feature',
+            properties: {},
+            geometry: {
+              type: 'Polygon',
+              coordinates: maskCoordinates
+            }
+          };
+
+          modalMap.value.addSource('area-boundary-mask', {
+            type: 'geojson',
+            data: maskGeoJson
+          });
+
+          modalMap.value.addLayer({
+            id: 'area-boundary-mask-fill',
+            type: 'fill',
+            source: 'area-boundary-mask',
+            paint: {
+              'fill-color': '#f8f7f2', // Matching the positron map style background color
+              'fill-opacity': 1.0     // Fully hides everything outside
+            }
+          });
+        }
+      } catch (err) {
+        console.error('Failed to load boundary geojson in modal map:', err);
+      }
+
+      // 2. Add marker
+      modalMarker.value = new maplibregl.Marker({
+        draggable: true
+      })
+        .setLngLat([lng, lat])
+        .addTo(modalMap.value);
+
+      // On click map: move marker and update coordinates
+      modalMap.value.on('click', (e: any) => {
+        const { lng: clickLng, lat: clickLat } = e.lngLat;
+        const roundedLat = parseFloat(clickLat.toFixed(6));
+        const roundedLng = parseFloat(clickLng.toFixed(6));
+
+        placeForm.value.latitude = roundedLat;
+        placeForm.value.longitude = roundedLng;
+        modalMarker.value?.setLngLat([roundedLng, roundedLat]);
+
+        clearError('placeLat');
+        clearError('placeLng');
+      });
+
+      // On drag marker: update coordinates
+      modalMarker.value.on('dragend', () => {
+        const lngLat = modalMarker.value?.getLngLat();
+        if (lngLat) {
+          const roundedLat = parseFloat(lngLat.lat.toFixed(6));
+          const roundedLng = parseFloat(lngLat.lng.toFixed(6));
+
+          placeForm.value.latitude = roundedLat;
+          placeForm.value.longitude = roundedLng;
+
+          clearError('placeLat');
+          clearError('placeLng');
+        }
+      });
+    });
+
+  } catch (error) {
+    console.error('Failed to initialize modal map:', error);
+  }
+};
+
+const destroyModalMap = () => {
+  if (modalMarker.value) {
+    modalMarker.value.remove();
+    modalMarker.value = null;
+  }
+  if (modalMap.value) {
+    modalMap.value.remove();
+    modalMap.value = null;
+  }
+};
+
+watch(showPlaceModal, (newVal) => {
+  if (newVal) {
+    initModalMap();
+  } else {
+    destroyModalMap();
+  }
+});
+
+watch([() => placeForm.value.latitude, () => placeForm.value.longitude], ([newLat, newLng]) => {
+  if (modalMap.value && modalMarker.value && typeof newLat === 'number' && typeof newLng === 'number' && !isNaN(newLat) && !isNaN(newLng)) {
+    const currentLngLat = modalMarker.value.getLngLat();
+    if (Math.abs(currentLngLat.lat - newLat) > 0.000001 || Math.abs(currentLngLat.lng - newLng) > 0.000001) {
+      modalMarker.value.setLngLat([newLng, newLat]);
+      modalMap.value.setCenter([newLng, newLat]);
+    }
+  }
+});
+
+const triggerGeocode = async () => {
+  const address = placeForm.value.address.trim();
+  if (!address) {
+    geocodeMessageType.value = 'error';
+    geocodeMessage.value = 'Vui lòng nhập địa chỉ trước khi tìm tọa độ.';
+    return;
+  }
+
+  isGeocoding.value = true;
+  geocodeMessage.value = '';
+  try {
+    let searchQuery = address;
+    if (!searchQuery.toLowerCase().includes('tien thang')) {
+      searchQuery += ', Tiến Thắng';
+    }
+    if (!searchQuery.toLowerCase().includes('me linh')) {
+      searchQuery += ', Mê Linh';
+    }
+    if (!searchQuery.toLowerCase().includes('ha noi')) {
+      searchQuery += ', Hà Nội';
+    }
+
+    const response = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(searchQuery)}&format=json&limit=1`, {
+      headers: {
+        'Accept-Language': 'vi,en'
+      }
+    });
+    
+    if (!response.ok) {
+      throw new Error('Không thể kết nối đến dịch vụ bản đồ.');
+    }
+    
+    const data = await response.json();
+    if (data && data.length > 0) {
+      const result = data[0];
+      placeForm.value.latitude = parseFloat(parseFloat(result.lat).toFixed(6));
+      placeForm.value.longitude = parseFloat(parseFloat(result.lon).toFixed(6));
+      
+      clearError('placeLat');
+      clearError('placeLng');
+      
+      geocodeMessageType.value = 'success';
+      geocodeMessage.value = `Đã tìm thấy tọa độ: Vĩ độ ${placeForm.value.latitude}, Kinh độ ${placeForm.value.longitude}`;
+    } else {
+      const rawResponse = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(address)}&format=json&limit=1`);
+      const rawData = await rawResponse.json();
+      if (rawData && rawData.length > 0) {
+        const result = rawData[0];
+        placeForm.value.latitude = parseFloat(parseFloat(result.lat).toFixed(6));
+        placeForm.value.longitude = parseFloat(parseFloat(result.lon).toFixed(6));
+        
+        clearError('placeLat');
+        clearError('placeLng');
+        
+        geocodeMessageType.value = 'success';
+        geocodeMessage.value = `Đã tìm thấy tọa độ: Vĩ độ ${placeForm.value.latitude}, Kinh độ ${placeForm.value.longitude}`;
+      } else {
+        geocodeMessageType.value = 'error';
+        geocodeMessage.value = 'Không tìm thấy tọa độ tự động. Vui lòng kiểm tra lại địa chỉ hoặc nhập tay.';
+      }
+    }
+  } catch (error: any) {
+    geocodeMessageType.value = 'error';
+    geocodeMessage.value = error.message || 'Lỗi xảy ra khi lấy tọa độ.';
+  } finally {
+    isGeocoding.value = false;
+  }
+};
+
+const suggestGeocode = () => {
+  if (placeForm.value.address.trim() && (!placeForm.value.latitude || !placeForm.value.longitude)) {
+    triggerGeocode();
+  }
 };
 
 const savePlace = async () => {
@@ -1917,5 +2186,75 @@ const unpublishPlace = async (place: Place) => {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+/* Maximized Split Screen Place Modal styling */
+.modal-card.modal-max-split {
+  width: 95vw;
+  max-width: 1400px;
+  height: 90vh;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+}
+.split-modal-body {
+  display: flex;
+  flex: 1;
+  padding: 0 !important;
+  overflow: hidden !important;
+  height: calc(90vh - 130px); /* Subtract header and footer */
+}
+.modal-form-column {
+  flex: 1.2;
+  overflow-y: auto;
+  padding: 24px;
+  max-height: 100%;
+}
+.modal-map-column {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 24px;
+  border-left: 1px solid var(--border-color);
+  background-color: rgba(0, 0, 0, 0.02);
+  max-height: 100%;
+}
+.modal-map-wrapper-split {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+.modal-map-frame-split {
+  flex: 1;
+  width: 100%;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
+  overflow: hidden;
+}
+
+@media (max-width: 992px) {
+  .modal-card.modal-max-split {
+    height: auto;
+    max-height: 90vh;
+  }
+  .split-modal-body {
+    flex-direction: column;
+    height: auto;
+    max-height: 70vh;
+    overflow-y: auto !important;
+  }
+  .modal-form-column {
+    flex: none;
+    overflow-y: visible;
+    padding: 16px;
+  }
+  .modal-map-column {
+    flex: none;
+    border-left: none;
+    border-top: 1px solid var(--border-color);
+    padding: 16px;
+    height: 350px;
+  }
 }
 </style>
