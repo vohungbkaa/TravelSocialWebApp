@@ -374,7 +374,7 @@
           <form @submit.prevent="savePlace" @click="showCategoryTooltip = false" novalidate>
             <div class="modal-body" @scroll="updateTooltipPosition">
               <div class="form-grid">
-                <div class="form-group">
+                <div class="form-group form-grid-full">
                   <label class="form-label" for="place-name">Tên địa danh *</label>
                   <input type="text" id="place-name" class="form-control" :class="{ 'has-error': formErrors.placeName }" v-model="placeForm.name" placeholder="Ví dụ: Đình Bạch Trữ" @input="clearError('placeName')" />
                   <span v-if="formErrors.placeName" class="form-error-msg">{{ formErrors.placeName }}</span>
@@ -414,12 +414,19 @@
                   />
                   <span v-if="formErrors.placeArea" class="form-error-msg">{{ formErrors.placeArea }}</span>
                 </div>
+                <!-- Temporarily Hidden Price Level -->
+                <!--
                 <div class="form-group">
                   <label class="form-label" for="place-price-level">Mức chi phí</label>
                   <CustomSelect
                     v-model="placeForm.priceLevel"
                     :options="priceLevelOptions"
                   />
+                </div>
+                -->
+                <div class="form-group form-grid-full">
+                  <label class="form-label" for="place-address">Địa chỉ</label>
+                  <input type="text" id="place-address" class="form-control" v-model="placeForm.address" placeholder="Ví dụ: Thôn Bạch Trữ, Xã Tiến Thắng, Mê Linh" />
                 </div>
                 <div class="form-group">
                   <label class="form-label" for="place-lat">Vĩ độ (Latitude) *</label>
@@ -431,6 +438,8 @@
                   <input type="number" step="0.000001" id="place-lng" class="form-control" :class="{ 'has-error': formErrors.placeLng }" v-model.number="placeForm.longitude" @input="clearError('placeLng')" />
                   <span v-if="formErrors.placeLng" class="form-error-msg">{{ formErrors.placeLng }}</span>
                 </div>
+                <!-- Temporarily Hidden Min/Max Costs and Duration -->
+                <!--
                 <div class="form-group">
                   <label class="form-label" for="place-min-cost">Chi phí tối thiểu (đ)</label>
                   <input type="number" id="place-min-cost" class="form-control" v-model.number="placeForm.estimatedMinCost" />
@@ -443,10 +452,7 @@
                   <label class="form-label" for="place-duration">Thời gian tham quan ước tính (phút)</label>
                   <input type="number" id="place-duration" class="form-control" v-model.number="placeForm.averageVisitDurationMinutes" />
                 </div>
-                <div class="form-group">
-                  <label class="form-label" for="place-address">Địa chỉ đầy đủ</label>
-                  <input type="text" id="place-address" class="form-control" v-model="placeForm.address" placeholder="Ví dụ: Thôn Bạch Trữ, Xã Tiến Thắng, Mê Linh" />
-                </div>
+                -->
                 <div class="form-group form-grid-full">
                   <label class="form-label" for="place-cover">Đường dẫn ảnh bìa</label>
                   <div class="input-upload-group">
@@ -467,10 +473,13 @@
                     <input type="file" ref="videoFileInput" style="display: none" accept="video/*" @change="e => uploadMediaFile(e, 'videoUrl')" />
                   </div>
                 </div>
+                <!-- Temporarily Hidden Audio URL -->
+                <!--
                 <div class="form-group form-grid-full">
                   <label class="form-label" for="place-audio">Đường dẫn Audio thuyết minh (TTS)</label>
                   <input type="text" id="place-audio" class="form-control" v-model="placeForm.audioUrl" placeholder="https://example.com/audio.mp3" />
                 </div>
+                -->
                 <div class="form-group form-grid-full">
                   <label class="form-label" for="place-summary">Tóm tắt ngắn gọn (Tối đa 500 ký tự) *</label>
                   <input type="text" id="place-summary" class="form-control" v-model="placeForm.summary" required placeholder="Một câu giới thiệu ngắn gọn hấp dẫn về địa danh" />
@@ -479,6 +488,8 @@
                   <label class="form-label" for="place-desc">Mô tả đầy đủ / Nội dung câu chuyện</label>
                   <textarea id="place-desc" class="form-control" rows="4" v-model="placeForm.description" placeholder="Chi tiết về lịch sử, sự tích, nghệ thuật kiến trúc hoặc hướng dẫn tham quan..."></textarea>
                 </div>
+                <!-- Temporarily Hidden Local Tips and Best Time to Visit -->
+                <!--
                 <div class="form-group form-grid-full">
                   <label class="form-label" for="place-tip">Mẹo địa phương khi tham quan</label>
                   <input type="text" id="place-tip" class="form-control" v-model="placeForm.localTip" placeholder="Ví dụ: Điểm check-in đẹp, trang phục nghiêm chỉnh khi vào viếng..." />
@@ -487,6 +498,7 @@
                   <label class="form-label" for="place-besttime">Thời gian lý tưởng để ghé thăm</label>
                   <input type="text" id="place-besttime" class="form-control" v-model="placeForm.bestTime" placeholder="Ví dụ: Sáng sớm hoặc Dịp lễ hội truyền thống đầu xuân" />
                 </div>
+                -->
               </div>
             </div>
             <div class="modal-footer">
@@ -690,12 +702,12 @@ const placeAreaOptions = computed(() => {
   return areas.value.map(a => ({ value: a.id, label: a.name }));
 });
 
-const priceLevelOptions = [
-  { value: 'FREE', label: 'Miễn phí (FREE)' },
-  { value: 'LOW', label: 'Thấp (LOW)' },
-  { value: 'MEDIUM', label: 'Trung bình (MEDIUM)' },
-  { value: 'HIGH', label: 'Cao (HIGH)' }
-];
+// const priceLevelOptions = [
+//   { value: 'FREE', label: 'Miễn phí (FREE)' },
+//   { value: 'LOW', label: 'Thấp (LOW)' },
+//   { value: 'MEDIUM', label: 'Trung bình (MEDIUM)' },
+//   { value: 'HIGH', label: 'Cao (HIGH)' }
+// ];
 
 const filteredPlaces = computed(() => {
   return places.value.filter(place => {
