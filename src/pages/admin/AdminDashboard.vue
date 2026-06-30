@@ -11,7 +11,7 @@
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
           Thêm Vùng mới
         </button>
-        <button v-if="activeTab === 'places'" class="btn btn-secondary btn-premium-secondary" @click="openCategoryModal()">
+        <button v-if="activeTab === 'places' || activeTab === 'categories'" class="btn btn-secondary btn-premium-secondary" @click="openCategoryModal()">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
           Thêm Danh mục
         </button>
@@ -24,7 +24,7 @@
 
     <!-- Stats Grid -->
     <div class="stats-grid">
-      <div class="card stat-card glow-card">
+      <div class="card stat-card glow-card" @click="switchTab('areas')" title="Xem Danh sách vùng bản đồ">
         <div class="stat-icon icon-areas">
           <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
         </div>
@@ -34,7 +34,7 @@
         </div>
       </div>
 
-      <div class="card stat-card glow-card">
+      <div class="card stat-card glow-card" @click="switchTab('places')" title="Xem Danh sách địa danh">
         <div class="stat-icon icon-places">
           <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="3"></circle></svg>
         </div>
@@ -44,7 +44,7 @@
         </div>
       </div>
 
-      <div class="card stat-card glow-card">
+      <div class="card stat-card glow-card" @click="switchTab('places')" title="Xem Danh sách địa danh đã công bố">
         <div class="stat-icon icon-routes">
           <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
         </div>
@@ -54,7 +54,7 @@
         </div>
       </div>
 
-      <div class="card stat-card glow-card">
+      <div class="card stat-card glow-card" @click="switchTab('categories')" title="Xem Danh mục địa danh">
         <div class="stat-icon icon-categories">
           <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
         </div>
@@ -73,6 +73,9 @@
       <button class="tab-btn" :class="{ active: activeTab === 'areas' }" @click="switchTab('areas')">
         Vùng bản đồ
       </button>
+      <button class="tab-btn" :class="{ active: activeTab === 'categories' }" @click="switchTab('categories')">
+        Danh mục địa danh
+      </button>
     </div>
 
     <!-- Table of Places -->
@@ -82,7 +85,7 @@
         <div class="search-filters">
           <select v-model="categoryFilter" class="form-control select-filter">
             <option value="">Tất cả danh mục</option>
-            <option v-for="cat in categories" :key="cat.id" :value="cat.id">
+            <option v-for="cat in activeCategories" :key="cat.id" :value="cat.id">
               {{ cat.name }}
             </option>
           </select>
@@ -228,6 +231,71 @@
       </div>
     </div>
 
+    <!-- Table of Categories -->
+    <div v-if="activeTab === 'categories'" class="card table-card animate-fade-in">
+      <div class="table-header">
+        <h2>Quản lý danh mục địa danh</h2>
+        <div class="search-box">
+          <input type="text" v-model="categorySearchQuery" class="form-control" placeholder="Tìm kiếm danh mục..." />
+        </div>
+      </div>
+
+      <div class="table-wrapper">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th class="col-stt">STT</th>
+              <th>Tên danh mục</th>
+              <th class="col-slug">Mã danh mục (Code)</th>
+              <th>Mô tả</th>
+              <th class="col-status">Trạng thái</th>
+              <th class="col-actions actions-header">Thao tác</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-if="filteredCategories.length === 0">
+              <td colspan="6" class="empty-cell">Không tìm thấy danh mục nào.</td>
+            </tr>
+            <tr v-for="(cat, index) in filteredCategories" :key="cat.id">
+              <td class="col-stt text-secondary" style="font-weight: 600;">{{ index + 1 }}</td>
+              <td>
+                <strong>{{ cat.name }}</strong>
+              </td>
+              <td class="col-slug"><code>{{ cat.code }}</code></td>
+              <td>
+                <span class="text-secondary">{{ cat.description || 'Không có mô tả' }}</span>
+              </td>
+              <td class="col-status">
+                <span class="badge-status" :class="cat.active !== false ? 'published' : 'hidden'">
+                  {{ cat.active !== false ? 'HOẠT ĐỘNG' : 'ẨN' }}
+                </span>
+              </td>
+              <td class="col-actions">
+                <div class="actions-cell">
+                  <button 
+                    v-if="cat.active !== false" 
+                    class="btn btn-secondary btn-xs btn-action" 
+                    @click="toggleCategoryStatus(cat, false)"
+                    title="Ẩn danh mục khỏi bộ lọc bản đồ công cộng"
+                  >
+                    Ẩn đi
+                  </button>
+                  <button 
+                    v-else 
+                    class="btn btn-success btn-xs btn-action" 
+                    @click="toggleCategoryStatus(cat, true)"
+                    title="Kích hoạt lại danh mục"
+                  >
+                    Kích hoạt
+                  </button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
     <!-- Area Dialog/Modal (Teleported to body to avoid stacking context overlapping) -->
     <Teleport to="body">
       <div v-if="showAreaModal" class="modal-overlay" @click.self="showAreaModal = false">
@@ -309,7 +377,7 @@
                   <label class="form-label" for="place-category">Danh mục</label>
                   <select id="place-category" class="form-control" v-model="placeForm.categoryId">
                     <option value="">-- Không phân loại / Chọn sau --</option>
-                    <option v-for="cat in categories" :key="cat.id" :value="cat.id">
+                    <option v-for="cat in activeCategories" :key="cat.id" :value="cat.id">
                       {{ cat.name }}
                     </option>
                   </select>
@@ -456,6 +524,8 @@ const modalLoading = ref(false);
 watch(() => route.path, (newPath) => {
   if (newPath.endsWith('/areas')) {
     activeTab.value = 'areas';
+  } else if (newPath.endsWith('/categories')) {
+    activeTab.value = 'categories';
   } else {
     activeTab.value = 'places';
   }
@@ -465,6 +535,8 @@ const switchTab = (tabName: string) => {
   activeTab.value = tabName;
   if (tabName === 'areas') {
     router.push('/admin/areas');
+  } else if (tabName === 'categories') {
+    router.push('/admin/categories');
   } else {
     router.push('/admin');
   }
@@ -474,6 +546,7 @@ const switchTab = (tabName: string) => {
 const searchQuery = ref('');
 const categoryFilter = ref('');
 const areaSearchQuery = ref('');
+const categorySearchQuery = ref('');
 
 // Area Form States
 const showAreaModal = ref(false);
@@ -526,6 +599,10 @@ const publishedCount = computed(() => {
   return places.value.filter(p => p.status === 'PUBLISHED').length;
 });
 
+const activeCategories = computed(() => {
+  return categories.value.filter(c => c.active !== false);
+});
+
 const filteredPlaces = computed(() => {
   return places.value.filter(place => {
     const matchesSearch = place.name.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
@@ -542,6 +619,13 @@ const filteredAreas = computed(() => {
   });
 });
 
+const filteredCategories = computed(() => {
+  return categories.value.filter(cat => {
+    return cat.name.toLowerCase().includes(categorySearchQuery.value.toLowerCase()) ||
+      cat.code.toLowerCase().includes(categorySearchQuery.value.toLowerCase());
+  });
+});
+
 // Lifecycle
 onMounted(() => {
   loadAllData();
@@ -552,7 +636,7 @@ const loadAllData = async () => {
   try {
     areas.value = await api.areas.listAdmin();
     places.value = await api.places.listAdmin();
-    categories.value = await api.categories.list();
+    categories.value = await api.categories.listAdmin();
   } catch (error) {
     console.error('Failed to load dashboard data:', error);
   } finally {
@@ -746,6 +830,16 @@ const saveCategory = async () => {
   }
 };
 
+const toggleCategoryStatus = async (cat: PlaceCategory, active: boolean) => {
+  try {
+    await api.categories.updateStatus(cat.id, active);
+    alert(`Đã ${active ? 'hoạt động lại' : 'ẩn'} danh mục "${cat.name}" thành công!`);
+    await loadAllData();
+  } catch (error: any) {
+    alert(error.message || 'Lỗi khi cập nhật trạng thái danh mục.');
+  }
+};
+
 const deletePlace = async (place: Place) => {
   if (confirm(`Bạn có chắc muốn xóa địa danh "${place.name}"?`)) {
     try {
@@ -815,6 +909,12 @@ const unpublishPlace = async (place: Place) => {
   font-weight: 500;
 }
 
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
 /* Premium micro buttons */
 .btn-premium {
   background: linear-gradient(135deg, var(--primary), var(--secondary));
@@ -873,6 +973,7 @@ const unpublishPlace = async (place: Place) => {
   transition: all var(--transition-normal);
   position: relative;
   overflow: hidden;
+  cursor: pointer;
 }
 
 .stat-card::after {
@@ -1082,7 +1183,7 @@ const unpublishPlace = async (place: Place) => {
 }
 
 /* Explicit Width columns to prevent wrapping & align grid lines */
-.col-slug, .col-category, .col-area, .col-coords, .col-status, .col-actions {
+.col-stt, .col-slug, .col-category, .col-area, .col-coords, .col-status, .col-actions {
   width: 1%;
   white-space: nowrap;
 }
@@ -1199,6 +1300,19 @@ const unpublishPlace = async (place: Place) => {
   background-color: #f59e0b;
   border-radius: 50%;
   box-shadow: 0 0 6px #f59e0b;
+}
+
+.badge-status.hidden {
+  background-color: var(--border-color);
+  color: var(--text-secondary);
+}
+
+.badge-status.hidden::before {
+  content: '';
+  width: 5px;
+  height: 5px;
+  background-color: var(--text-muted);
+  border-radius: 50%;
 }
 
 .actions-header {

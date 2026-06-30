@@ -17,6 +17,7 @@ export interface PlaceCategory {
   code: string;
   name: string;
   description?: string;
+  active?: boolean;
 }
 
 export interface Area {
@@ -175,10 +176,21 @@ export const api = {
       return api.request<PlaceCategory[]>('/place-categories');
     },
 
+    async listAdmin(): Promise<PlaceCategory[]> {
+      return api.request<PlaceCategory[]>('/place-categories/admin');
+    },
+
     async create(code: string, name: string, description?: string): Promise<PlaceCategory> {
-      return api.request<PlaceCategory>('/admin/places/categories', {
+      return api.request<PlaceCategory>('/place-categories', {
         method: 'POST',
         body: { code, name, description },
+      });
+    },
+
+    async updateStatus(id: string, active: boolean): Promise<PlaceCategory> {
+      return api.request<PlaceCategory>(`/place-categories/${id}`, {
+        method: 'PATCH',
+        body: { active },
       });
     }
   },

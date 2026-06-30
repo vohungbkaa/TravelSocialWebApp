@@ -55,6 +55,16 @@ const routes: Array<RouteRecordRaw> = [
         path: 'areas',
         name: 'AdminAreas',
         component: AdminDashboard // Reusing dashboard for placeholder
+      },
+      {
+        path: 'categories',
+        name: 'AdminCategories',
+        component: AdminDashboard
+      },
+      {
+        path: 'places',
+        name: 'AdminPlaces',
+        component: AdminDashboard
       }
     ]
   },
