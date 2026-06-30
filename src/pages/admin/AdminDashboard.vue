@@ -1658,7 +1658,7 @@ const unpublishPlace = async (place: Place) => {
 .form-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 16px;
+  gap: 2px;
 }
 
 .form-grid-full {
@@ -1668,7 +1668,7 @@ const unpublishPlace = async (place: Place) => {
 .form-group {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 4px;
 }
 
 .form-label {
@@ -1727,7 +1727,7 @@ const unpublishPlace = async (place: Place) => {
 .form-grid-single {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 12px;
 }
 
 @media (max-width: 768px) {

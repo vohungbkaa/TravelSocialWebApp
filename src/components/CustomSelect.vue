@@ -113,10 +113,10 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 10px 16px;
+  padding: 8px 12px;
   font-size: 0.875rem;
   font-weight: 500;
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-sm);
   border: 1px solid var(--border-color);
   background-color: var(--bg-card);
   color: var(--text-primary);
@@ -124,17 +124,16 @@ onUnmounted(() => {
   cursor: pointer;
   transition: all var(--transition-normal);
   outline: none;
-  min-height: 42px;
+  min-height: 38px;
 }
 
 .custom-select-trigger:hover:not(:disabled) {
-  border-color: var(--primary);
-  box-shadow: 0 0 0 3px var(--primary-light);
+  border-color: var(--border-hover);
 }
 
 .custom-select-trigger:focus:not(:disabled) {
   border-color: var(--primary);
-  box-shadow: 0 0 0 3px var(--primary-light);
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.12);
 }
 
 .custom-select-trigger.placeholder-active {
