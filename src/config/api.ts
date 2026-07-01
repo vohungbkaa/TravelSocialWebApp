@@ -66,6 +66,8 @@ export interface Place {
   bestTime?: string;
   priceRange?: string;
   categoryId: number;
+  markerIconId?: number | null;
+  markerIcon?: MarkerIcon | null;
   address?: string;
   provinceCode?: string;
   districtCode?: string;

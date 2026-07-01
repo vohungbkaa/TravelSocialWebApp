@@ -416,6 +416,41 @@
                     />
                     <span v-if="formErrors.placeArea" class="form-error-msg">{{ formErrors.placeArea }}</span>
                   </div>
+                  <div class="form-group form-grid-full marker-override-section">
+                    <label class="form-label" for="place-marker-icon">Icon hiển thị trên bản đồ</label>
+                    <div class="marker-preview-row place-marker-preview">
+                      <div class="marker-preview" :style="{ backgroundColor: effectivePlaceMarkerIcon?.markerColor || '#6366f1' }">
+                        <img :src="effectivePlaceMarkerIcon?.iconUrl || defaultMarkerIconUrl" alt="" />
+                      </div>
+                      <div class="marker-preview-copy">
+                        <strong>{{ effectivePlaceMarkerIcon?.name || 'Theo danh mục' }}</strong>
+                        <span>{{ placeForm.markerIconId ? 'Icon riêng cho địa danh này.' : 'Để trống để dùng icon mặc định của danh mục.' }}</span>
+                      </div>
+                    </div>
+                    <div class="place-marker-picker">
+                      <button
+                        type="button"
+                        class="place-marker-option"
+                        :class="{ active: !placeForm.markerIconId }"
+                        @click="placeForm.markerIconId = ''"
+                      >
+                        Theo danh mục
+                      </button>
+                      <button
+                        v-for="icon in markerIcons"
+                        :key="icon.id"
+                        type="button"
+                        class="place-marker-icon-card"
+                        :class="{ active: Number(placeForm.markerIconId) === icon.id }"
+                        @click="placeForm.markerIconId = icon.id"
+                        :title="icon.name"
+                      >
+                        <span class="icon-color-dot" :style="{ backgroundColor: icon.markerColor }"></span>
+                        <img :src="icon.iconUrl" alt="" />
+                        <span>{{ icon.name }}</span>
+                      </button>
+                    </div>
+                  </div>
                   
                   <div class="form-group form-grid-full">
                     <label class="form-label" for="place-address">Địa chỉ <span class="required-star">*</span></label>
@@ -720,6 +755,7 @@ const placeForm = ref({
   summary: '',
   description: '',
   categoryId: '' as string | number,
+  markerIconId: '' as string | number,
   areaId: '',
   address: '',
   latitude: 21.195,
@@ -776,6 +812,21 @@ const placeCategoryOptions = computed(() => {
     { value: '', label: '-- Không phân loại / Chọn sau --' },
     ...activeCategories.value.map(c => ({ value: c.id, label: c.name }))
   ];
+});
+
+const selectedPlaceCategory = computed(() => {
+  if (!placeForm.value.categoryId) {
+    return null;
+  }
+  return categories.value.find(category => category.id === Number(placeForm.value.categoryId)) || null;
+});
+
+const effectivePlaceMarkerIcon = computed(() => {
+  if (placeForm.value.markerIconId) {
+    return markerIcons.value.find(icon => icon.id === Number(placeForm.value.markerIconId)) || null;
+  }
+
+  return selectedPlaceCategory.value?.markerIcon || null;
 });
 
 const placeAreaOptions = computed(() => {
@@ -930,6 +981,7 @@ const openPlaceModal = (place?: Place) => {
       summary: place.summary || '',
       description: place.description || '',
       categoryId: place.categoryId || '',
+      markerIconId: place.markerIconId || '',
       areaId: place.areaId || '',
       address: place.address || '',
       latitude: place.latitude ? Number(place.latitude) : 21.195,
@@ -952,6 +1004,7 @@ const openPlaceModal = (place?: Place) => {
       summary: '',
       description: '',
       categoryId: '',
+      markerIconId: '',
       areaId: areas.value.find(a => a.slug === 'tien-thang')?.id || areas.value[0]?.id || '',
       address: '',
       latitude: null as any,
@@ -980,6 +1033,73 @@ const geocodeMessageType = ref<'success' | 'error'>('success');
 const modalMap = shallowRef<maplibregl.Map | null>(null);
 const modalMarker = shallowRef<maplibregl.Marker | null>(null);
 const modalMapEl = ref<HTMLElement | null>(null);
+
+const createPlaceMarkerElement = () => {
+  const markerIcon = effectivePlaceMarkerIcon.value;
+  const markerColor = markerIcon?.markerColor || '#6366f1';
+  const iconUrl = markerIcon?.iconUrl || defaultMarkerIconUrl;
+  const el = document.createElement('div');
+  el.className = 'admin-map-marker-wrapper';
+  el.innerHTML = `
+    <div class="admin-map-pin" style="--marker-color: ${markerColor}">
+      <span class="admin-map-pin-inner">
+        <img src="${iconUrl}" alt="" aria-hidden="true" />
+      </span>
+    </div>
+  `;
+  return el;
+};
+
+const attachModalMarkerDragHandler = () => {
+  modalMarker.value?.on('dragend', () => {
+    const lngLat = modalMarker.value?.getLngLat();
+    if (lngLat) {
+      const roundedLat = parseFloat(lngLat.lat.toFixed(6));
+      const roundedLng = parseFloat(lngLat.lng.toFixed(6));
+
+      placeForm.value.latitude = roundedLat;
+      placeForm.value.longitude = roundedLng;
+
+      clearError('placeCoords');
+      geocodeMessage.value = '';
+    }
+  });
+};
+
+const setModalMarker = (markerLng: number, markerLat: number) => {
+  if (!modalMap.value) return;
+
+  if (modalMarker.value) {
+    modalMarker.value.setLngLat([markerLng, markerLat]);
+    return;
+  }
+
+  modalMarker.value = new maplibregl.Marker({
+    element: createPlaceMarkerElement(),
+    draggable: true,
+    anchor: 'bottom',
+  })
+    .setLngLat([markerLng, markerLat])
+    .addTo(modalMap.value);
+
+  attachModalMarkerDragHandler();
+};
+
+const refreshModalMarkerIcon = () => {
+  if (!modalMap.value || !modalMarker.value) return;
+
+  const lngLat = modalMarker.value.getLngLat();
+  modalMarker.value.remove();
+  modalMarker.value = new maplibregl.Marker({
+    element: createPlaceMarkerElement(),
+    draggable: true,
+    anchor: 'bottom',
+  })
+    .setLngLat(lngLat)
+    .addTo(modalMap.value);
+
+  attachModalMarkerDragHandler();
+};
 
 const getPaddedBounds = (bounds: [[number, number], [number, number]], padding: number = 0.05) => {
   const [[west, south], [east, north]] = bounds;
@@ -1098,29 +1218,7 @@ const initModalMap = async () => {
 
       // Helper function to create or update the marker
       const updateMarkerPosition = (markerLng: number, markerLat: number) => {
-        if (!modalMarker.value && modalMap.value) {
-          modalMarker.value = new maplibregl.Marker({
-            draggable: true
-          })
-            .setLngLat([markerLng, markerLat])
-            .addTo(modalMap.value);
-
-          modalMarker.value.on('dragend', () => {
-            const lngLat = modalMarker.value?.getLngLat();
-            if (lngLat) {
-              const roundedLat = parseFloat(lngLat.lat.toFixed(6));
-              const roundedLng = parseFloat(lngLat.lng.toFixed(6));
-
-              placeForm.value.latitude = roundedLat;
-              placeForm.value.longitude = roundedLng;
-
-              clearError('placeCoords');
-              geocodeMessage.value = '';
-            }
-          });
-        } else if (modalMarker.value) {
-          modalMarker.value.setLngLat([markerLng, markerLat]);
-        }
+        setModalMarker(markerLng, markerLat);
       };
 
       // 2. Add marker initially only if coordinates are already set
@@ -1170,24 +1268,7 @@ watch(showPlaceModal, (newVal) => {
 watch([() => placeForm.value.latitude, () => placeForm.value.longitude], ([newLat, newLng]) => {
   if (modalMap.value && typeof newLat === 'number' && typeof newLng === 'number' && !isNaN(newLat) && !isNaN(newLng)) {
     if (!modalMarker.value) {
-      modalMarker.value = new maplibregl.Marker({
-        draggable: true
-      })
-        .setLngLat([newLng, newLat])
-        .addTo(modalMap.value);
-
-      modalMarker.value.on('dragend', () => {
-        const lngLat = modalMarker.value?.getLngLat();
-        if (lngLat) {
-          const roundedLat = parseFloat(lngLat.lat.toFixed(6));
-          const roundedLng = parseFloat(lngLat.lng.toFixed(6));
-
-          placeForm.value.latitude = roundedLat;
-          placeForm.value.longitude = roundedLng;
-
-          clearError('placeCoords');
-        }
-      });
+      setModalMarker(newLng, newLat);
     } else {
       const currentLngLat = modalMarker.value.getLngLat();
       if (Math.abs(currentLngLat.lat - newLat) > 0.000001 || Math.abs(currentLngLat.lng - newLng) > 0.000001) {
@@ -1196,6 +1277,10 @@ watch([() => placeForm.value.latitude, () => placeForm.value.longitude], ([newLa
     }
     modalMap.value.setCenter([newLng, newLat]);
   }
+});
+
+watch(effectivePlaceMarkerIcon, () => {
+  refreshModalMarkerIcon();
 });
 
 const triggerGeocode = async () => {
@@ -1292,6 +1377,7 @@ const savePlace = async () => {
     const payload = {
       ...placeForm.value,
       categoryId: placeForm.value.categoryId ? Number(placeForm.value.categoryId) : undefined,
+      markerIconId: placeForm.value.markerIconId ? Number(placeForm.value.markerIconId) : null,
       latitude: placeForm.value.latitude ? Number(placeForm.value.latitude) : undefined,
       longitude: placeForm.value.longitude ? Number(placeForm.value.longitude) : undefined,
       estimatedMinCost: placeForm.value.estimatedMinCost ? Number(placeForm.value.estimatedMinCost) : undefined,
@@ -2280,6 +2366,101 @@ const unpublishPlace = async (place: Place) => {
   color: var(--text-secondary);
   font-size: 0.78rem;
   line-height: 1.35;
+}
+
+.place-marker-preview {
+  margin-top: 10px;
+  margin-bottom: 0;
+}
+
+.marker-override-section {
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.place-marker-picker {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(118px, 1fr));
+  gap: 8px;
+  margin-top: 10px;
+  max-height: 144px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.place-marker-option,
+.place-marker-icon-card {
+  min-height: 40px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  background: var(--bg-card);
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 9px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: left;
+}
+
+.place-marker-option:hover,
+.place-marker-icon-card:hover,
+.place-marker-option.active,
+.place-marker-icon-card.active {
+  border-color: var(--primary);
+  background: var(--primary-light);
+  color: var(--primary);
+}
+
+.place-marker-icon-card img {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 18px;
+}
+
+.place-marker-icon-card span:last-child {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+:deep(.admin-map-marker-wrapper) {
+  width: 34px;
+  height: 44px;
+  cursor: grab;
+}
+
+:deep(.admin-map-marker-wrapper:active) {
+  cursor: grabbing;
+}
+
+:deep(.admin-map-pin) {
+  width: 34px;
+  height: 34px;
+  background: var(--marker-color, #6366f1);
+  border: 2px solid #ffffff;
+  border-radius: 50% 50% 50% 8px;
+  transform: rotate(-45deg);
+  display: grid;
+  place-items: center;
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.34);
+}
+
+:deep(.admin-map-pin-inner) {
+  transform: rotate(45deg);
+  display: grid;
+  place-items: center;
+}
+
+:deep(.admin-map-pin-inner img) {
+  width: 16px;
+  height: 16px;
+  display: block;
 }
 
 .btn-inline-action {
