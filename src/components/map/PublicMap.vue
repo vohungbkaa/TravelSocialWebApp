@@ -206,9 +206,14 @@ const getIconifyUrl = (icon?: string) => {
   return `https://api.iconify.design/lucide:${safeIcon}.svg?color=%23ffffff`;
 };
 
+const isUploadedMarkerImage = (iconUrl: string) => {
+  return iconUrl.startsWith('/media/') || iconUrl.startsWith('/uploads/') || /\/media\/|\/uploads\//i.test(iconUrl);
+};
+
 const getCategoryIcon = (place: Place) => {
   const iconUrl = place.categoryIconUrl || getIconifyUrl(place.categoryIcon);
-  return `<img class="custom-pin-icon" src="${iconUrl}" alt="" aria-hidden="true" />`;
+  const iconClass = isUploadedMarkerImage(iconUrl) ? 'custom-pin-icon uploaded-marker-image' : 'custom-pin-icon';
+  return `<img class="${iconClass}" src="${iconUrl}" alt="" aria-hidden="true" />`;
 };
 
 const getCategoryMarkerColor = (place: Place) => {
@@ -591,8 +596,8 @@ watch(() => props.selectedPlace, (newPlace) => {
 }
 
 :deep(.custom-pin) {
-  width: 30px;
-  height: 30px;
+  width: 38px;
+  height: 38px;
   border-radius: 50% 50% 50% 0;
   background: var(--marker-color, var(--primary));
   transform: rotate(-45deg);
@@ -602,7 +607,7 @@ watch(() => props.selectedPlace, (newPlace) => {
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.35), 0 0 0 2px #ffffff;
   transition: all var(--transition-normal, 0.25s ease);
   /* Adjust anchor alignment point */
-  margin-bottom: 15px; 
+  margin-bottom: 19px; 
 }
 
 :deep(.custom-pin::after) {
@@ -618,9 +623,18 @@ watch(() => props.selectedPlace, (newPlace) => {
 }
 
 :deep(.custom-pin-icon) {
-  width: 16px;
-  height: 16px;
+  width: 22px;
+  height: 22px;
   display: block;
+  object-fit: contain;
+}
+
+:deep(.custom-pin-icon.uploaded-marker-image) {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: rgba(255, 255, 255, 0.18);
 }
 
 /* Hover and Active states */

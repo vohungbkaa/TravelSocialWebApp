@@ -420,7 +420,11 @@
                     <label class="form-label" for="place-marker-icon">Icon hiển thị trên bản đồ</label>
                     <div class="marker-preview-row place-marker-preview">
                       <div class="marker-preview" :style="{ backgroundColor: effectivePlaceMarkerIcon?.markerColor || '#6366f1' }">
-                        <img :src="effectivePlaceMarkerIcon?.iconUrl || defaultMarkerIconUrl" alt="" />
+                        <img
+                          :src="effectivePlaceMarkerIcon?.iconUrl || defaultMarkerIconUrl"
+                          :class="{ 'uploaded-marker-image': isUploadedMarkerImage(effectivePlaceMarkerIcon?.iconUrl || defaultMarkerIconUrl) }"
+                          alt=""
+                        />
                       </div>
                       <div class="marker-preview-copy">
                         <strong>{{ effectivePlaceMarkerIcon?.name || 'Theo danh mục' }}</strong>
@@ -446,9 +450,16 @@
                         :title="icon.name"
                       >
                         <span class="icon-color-dot" :style="{ backgroundColor: icon.markerColor }"></span>
-                        <img :src="icon.iconUrl" alt="" />
+                        <img :src="icon.iconUrl" :class="{ 'uploaded-marker-image': isUploadedMarkerImage(icon.iconUrl) }" alt="" />
                         <span>{{ icon.name }}</span>
                       </button>
+                    </div>
+                    <div class="place-marker-upload-row">
+                      <button type="button" class="btn btn-secondary btn-upload" :disabled="modalLoading" @click="markerIconFileInput?.click()">
+                        Tải ảnh marker
+                      </button>
+                      <input type="file" ref="markerIconFileInput" style="display: none" accept="image/*,.svg" @change="uploadPlaceMarkerIcon" />
+                      <span>Ảnh upload sẽ được lưu thành icon riêng và chọn cho địa danh này.</span>
                     </div>
                   </div>
                   
@@ -1034,16 +1045,22 @@ const modalMap = shallowRef<maplibregl.Map | null>(null);
 const modalMarker = shallowRef<maplibregl.Marker | null>(null);
 const modalMapEl = ref<HTMLElement | null>(null);
 
+const isUploadedMarkerImage = (iconUrl?: string | null) => {
+  if (!iconUrl) return false;
+  return iconUrl.startsWith('/media/') || iconUrl.startsWith('/uploads/') || /\/media\/|\/uploads\//i.test(iconUrl);
+};
+
 const createPlaceMarkerElement = () => {
   const markerIcon = effectivePlaceMarkerIcon.value;
   const markerColor = markerIcon?.markerColor || '#6366f1';
   const iconUrl = markerIcon?.iconUrl || defaultMarkerIconUrl;
+  const iconClass = isUploadedMarkerImage(iconUrl) ? 'uploaded-marker-image' : '';
   const el = document.createElement('div');
   el.className = 'admin-map-marker-wrapper';
   el.innerHTML = `
     <div class="admin-map-pin" style="--marker-color: ${markerColor}">
       <span class="admin-map-pin-inner">
-        <img src="${iconUrl}" alt="" aria-hidden="true" />
+        <img class="${iconClass}" src="${iconUrl}" alt="" aria-hidden="true" />
       </span>
     </div>
   `;
@@ -1504,6 +1521,44 @@ const autoFillCategoryCode = () => {
 
 const coverFileInput = ref<HTMLInputElement | null>(null);
 const videoFileInput = ref<HTMLInputElement | null>(null);
+const markerIconFileInput = ref<HTMLInputElement | null>(null);
+
+const createMarkerIconKey = (file: File) => {
+  const baseName = placeForm.value.name.trim() || file.name.replace(/\.[^.]+$/, '') || 'marker';
+  const safeBaseName = normalizeSearchText(baseName)
+    .replace(/[^a-z0-9\s-]/g, '')
+    .trim()
+    .replace(/\s+/g, '-')
+    .slice(0, 40) || 'marker';
+  return `${safeBaseName}-${Date.now()}`;
+};
+
+const uploadPlaceMarkerIcon = async (event: Event) => {
+  const target = event.target as HTMLInputElement;
+  if (!target.files || target.files.length === 0) return;
+
+  const file = target.files[0];
+  modalLoading.value = true;
+  try {
+    const uploadResult = await api.upload.file(file);
+    const markerIcon = await api.markerIcons.create({
+      key: createMarkerIconKey(file),
+      name: placeForm.value.name.trim() ? `${placeForm.value.name.trim()} marker` : file.name.replace(/\.[^.]+$/, ''),
+      iconUrl: uploadResult.url,
+      markerColor: effectivePlaceMarkerIcon.value?.markerColor || '#6366f1',
+      active: true,
+    });
+    markerIcons.value = [...markerIcons.value.filter(item => item.id !== markerIcon.id), markerIcon]
+      .sort((a, b) => a.name.localeCompare(b.name));
+    placeForm.value.markerIconId = markerIcon.id;
+    refreshModalMarkerIcon();
+  } catch (error: any) {
+    alert(error.message || 'Lỗi khi tải ảnh marker.');
+  } finally {
+    modalLoading.value = false;
+    target.value = '';
+  }
+};
 
 const uploadMediaFile = async (event: Event, field: 'coverUrl' | 'videoUrl') => {
   const target = event.target as HTMLInputElement;
@@ -2345,9 +2400,18 @@ const unpublishPlace = async (place: Place) => {
 }
 
 .marker-preview img {
-  width: 20px;
-  height: 20px;
+  width: 22px;
+  height: 22px;
   transform: rotate(45deg);
+  object-fit: contain;
+}
+
+.marker-preview img.uploaded-marker-image {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: rgba(255, 255, 255, 0.18);
 }
 
 .marker-preview-copy {
@@ -2420,6 +2484,16 @@ const unpublishPlace = async (place: Place) => {
   width: 18px;
   height: 18px;
   flex: 0 0 18px;
+  object-fit: contain;
+}
+
+.place-marker-icon-card img.uploaded-marker-image {
+  width: 24px;
+  height: 24px;
+  flex-basis: 24px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: rgba(255, 255, 255, 0.18);
 }
 
 .place-marker-icon-card span:last-child {
@@ -2429,9 +2503,23 @@ const unpublishPlace = async (place: Place) => {
   white-space: nowrap;
 }
 
+.place-marker-upload-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+  color: var(--text-secondary);
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+
+.place-marker-upload-row .btn {
+  flex: 0 0 auto;
+}
+
 :deep(.admin-map-marker-wrapper) {
-  width: 34px;
-  height: 44px;
+  width: 42px;
+  height: 54px;
   cursor: grab;
 }
 
@@ -2440,8 +2528,8 @@ const unpublishPlace = async (place: Place) => {
 }
 
 :deep(.admin-map-pin) {
-  width: 34px;
-  height: 34px;
+  width: 42px;
+  height: 42px;
   background: var(--marker-color, #6366f1);
   border: 2px solid #ffffff;
   border-radius: 50% 50% 50% 8px;
@@ -2458,9 +2546,18 @@ const unpublishPlace = async (place: Place) => {
 }
 
 :deep(.admin-map-pin-inner img) {
-  width: 16px;
-  height: 16px;
+  width: 22px;
+  height: 22px;
   display: block;
+  object-fit: contain;
+}
+
+:deep(.admin-map-pin-inner img.uploaded-marker-image) {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: rgba(255, 255, 255, 0.18);
 }
 
 .btn-inline-action {
