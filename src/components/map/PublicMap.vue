@@ -630,8 +630,8 @@ watch(() => props.selectedPlace, (newPlace) => {
 }
 
 :deep(.custom-pin-icon.uploaded-marker-image) {
-  width: 30px;
-  height: 30px;
+  width: 35px;
+  height: 35px;
   border-radius: 50%;
   object-fit: cover;
   background: rgba(255, 255, 255, 0.18);
