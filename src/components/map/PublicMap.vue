@@ -201,42 +201,21 @@ const loadBoundaryData = async () => {
   return response.json();
 };
 
-// Category specific styling classes
-const getCategoryClass = (place: Place) => {
-  const icon = place.categoryIcon;
-  if (icon === 'landmark') return 'marker-kien-truc';
-  if (icon === 'utensils') return 'marker-am-thuc';
-  if (icon === 'book') return 'marker-lich-su';
-  if (icon === 'masks-theater') return 'marker-van-hoa';
-  if (icon === 'calendar-days') return 'marker-festival';
-  if (icon === 'leaf') return 'marker-nature';
-  if (icon === 'bicycle') return 'marker-activity';
-  
-  // Fallback to name-based matching
-  const clean = place.category.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-  if (clean.includes('kien truc')) return 'marker-kien-truc';
-  if (clean.includes('am thuc')) return 'marker-am-thuc';
-  if (clean.includes('lich su')) return 'marker-lich-su';
-  if (clean.includes('van hoa')) return 'marker-van-hoa';
-  if (clean.includes('le hoi')) return 'marker-festival';
-  return '';
+const getIconifyUrl = (icon?: string) => {
+  const safeIcon = icon && /^[a-z0-9-]+$/i.test(icon) ? icon : 'map-pin';
+  return `https://api.iconify.design/lucide:${safeIcon}.svg?color=%23ffffff`;
 };
 
-// Category custom icon
 const getCategoryIcon = (place: Place) => {
-  const icon = place.categoryIcon || getLegacyIconName(place.category);
-  return `<i class="fa-solid fa-${icon}" style="font-size: 13px; color: #ffffff; display: block;"></i>`;
+  const iconUrl = place.categoryIconUrl || getIconifyUrl(place.categoryIcon);
+  return `<img class="custom-pin-icon" src="${iconUrl}" alt="" aria-hidden="true" />`;
 };
 
-const getLegacyIconName = (category: string) => {
-  const clean = category.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-  if (clean.includes('kien truc')) return 'landmark';
-  if (clean.includes('am thuc')) return 'utensils';
-  if (clean.includes('lich su')) return 'book';
-  if (clean.includes('van hoa')) return 'masks-theater';
-  if (clean.includes('le hoi')) return 'calendar-days';
-  if (clean.includes('nong nghiep') || clean.includes('thien nhien') || clean.includes('dua luoi')) return 'leaf';
-  return 'map-pin';
+const getCategoryMarkerColor = (place: Place) => {
+  if (place.categoryMarkerColor && /^#[0-9a-f]{6}$/i.test(place.categoryMarkerColor)) {
+    return place.categoryMarkerColor;
+  }
+  return '#6366f1';
 };
 // Initialize Map
 onMounted(async () => {
@@ -411,13 +390,13 @@ const updateMarkers = () => {
     const el = document.createElement('div');
     el.className = 'custom-marker-wrapper';
 
-    const catClass = getCategoryClass(place);
     const isActive = props.selectedPlace?.id === place.id;
 
     const catIcon = getCategoryIcon(place);
+    const markerColor = getCategoryMarkerColor(place);
 
     el.innerHTML = `
-      <div class="custom-pin ${catClass} ${isActive ? 'active' : ''}">
+      <div class="custom-pin ${isActive ? 'active' : ''}" style="--marker-color: ${markerColor}">
         <span class="custom-pin-inner">${catIcon}</span>
       </div>
     `;
@@ -638,27 +617,10 @@ watch(() => props.selectedPlace, (newPlace) => {
   justify-content: center;
 }
 
-/* Category Specific Colors */
-:deep(.marker-van-hoa) {
-  --marker-color: #a855f7; /* Violet */
-}
-:deep(.marker-lich-su) {
-  --marker-color: #10b981; /* Emerald */
-}
-:deep(.marker-kien-truc) {
-  --marker-color: #3b82f6; /* Blue */
-}
-:deep(.marker-am-thuc) {
-  --marker-color: #f59e0b; /* Amber */
-}
-:deep(.marker-festival) {
-  --marker-color: #ec4899; /* Pink */
-}
-:deep(.marker-nature) {
-  --marker-color: #22c55e; /* Green */
-}
-:deep(.marker-activity) {
-  --marker-color: #06b6d4; /* Cyan */
+:deep(.custom-pin-icon) {
+  width: 16px;
+  height: 16px;
+  display: block;
 }
 
 /* Hover and Active states */

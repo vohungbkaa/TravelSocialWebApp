@@ -168,7 +168,20 @@
               class="media-card"
               @click="openMediaViewer(item)"
             >
-              <img :src="getMediaThumbnail(item, selectedPlace)" class="media-card-img" draggable="false" />
+              <video 
+                v-if="item.type === 'video' && item.provider === 'local'" 
+                :src="item.url" 
+                class="media-card-img" 
+                preload="metadata"
+                muted
+                playsinline
+              ></video>
+              <img 
+                v-else 
+                :src="getMediaThumbnail(item, selectedPlace)" 
+                class="media-card-img" 
+                draggable="false" 
+              />
               <div v-if="item.type === 'video'" class="media-card-play-overlay">
                 <div class="play-btn-circle">
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
@@ -237,7 +250,7 @@
           <div v-else-if="activeViewerMedia.type === 'video'" class="viewer-video-wrapper">
             <!-- Direct Video MP4 -->
             <video 
-              v-if="isVideoFile(activeViewerMedia.url)" 
+              v-if="!getYoutubeId(activeViewerMedia.url) && !getVimeoId(activeViewerMedia.url)" 
               :src="activeViewerMedia.url" 
               controls 
               autoplay 
@@ -436,6 +449,9 @@ const mapBackendPlace = (p: any): Place => {
     name: p.name,
     category: p.category?.name || 'Uncategorized',
     categoryIcon: p.category?.icon || '',
+    categoryIconUrl: p.category?.markerIcon?.iconUrl || p.category?.iconUrl || '',
+    categoryMarkerColor: p.category?.markerIcon?.markerColor || p.category?.markerColor || '',
+    categoryMarkerIconId: p.category?.markerIcon?.id || p.category?.markerIconId,
     summary: p.summary || '',
     description: p.description || '',
     lat: p.latitude ? Number(p.latitude) : 0,
@@ -708,6 +724,7 @@ const getMediaThumbnail = (item: PlaceMedia, place: Place) => {
         return `https://img.youtube.com/vi/${id}/hqdefault.jpg`;
       }
     }
+    return place.coverUrl;
   }
   return item.url || place.coverUrl;
 };
@@ -728,9 +745,7 @@ const getVimeoEmbedUrl = (url: string) => {
   return id ? `https://player.vimeo.com/video/${id}?autoplay=1` : url;
 };
 
-const isVideoFile = (url: string) => {
-  return url.endsWith('.mp4') || url.endsWith('.webm') || url.endsWith('.ogg');
-};
+
 
 // Explore Modal & Text-To-Speech (TTS) states
 const isExploreModalOpen = ref(false);

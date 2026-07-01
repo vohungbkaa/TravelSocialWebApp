@@ -18,7 +18,20 @@ export interface PlaceCategory {
   name: string;
   description?: string;
   icon?: string;
+  iconUrl?: string;
+  markerColor?: string;
+  markerIconId?: number;
+  markerIcon?: MarkerIcon;
   active?: boolean;
+}
+
+export interface MarkerIcon {
+  id: number;
+  key: string;
+  name: string;
+  iconUrl: string;
+  markerColor: string;
+  active: boolean;
 }
 
 export interface Area {
@@ -193,10 +206,18 @@ export const api = {
       return api.request<PlaceCategory[]>('/place-categories/admin');
     },
 
-    async create(name: string, code?: string, description?: string, icon?: string): Promise<PlaceCategory> {
+    async create(
+      name: string,
+      code?: string,
+      description?: string,
+      icon?: string,
+      iconUrl?: string,
+      markerColor?: string,
+      markerIconId?: number
+    ): Promise<PlaceCategory> {
       return api.request<PlaceCategory>('/place-categories', {
         method: 'POST',
-        body: { name, code, description, icon },
+        body: { name, code, description, icon, iconUrl, markerColor, markerIconId },
       });
     },
 
@@ -206,6 +227,25 @@ export const api = {
         body: { active },
       });
     }
+  },
+
+  markerIcons: {
+    async list(): Promise<MarkerIcon[]> {
+      return api.request<MarkerIcon[]>('/marker-icons');
+    },
+
+    async create(payload: {
+      key: string;
+      name: string;
+      iconUrl: string;
+      markerColor: string;
+      active?: boolean;
+    }): Promise<MarkerIcon> {
+      return api.request<MarkerIcon>('/marker-icons', {
+        method: 'POST',
+        body: payload,
+      });
+    },
   },
 
   // Areas API

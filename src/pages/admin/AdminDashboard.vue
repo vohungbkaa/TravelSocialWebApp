@@ -519,11 +519,48 @@
               <div class="form-grid-single">
                 <div class="form-group">
                   <label class="form-label" for="cat-name">Tên danh mục *</label>
-                  <input type="text" id="cat-name" class="form-control" :class="{ 'has-error': formErrors.categoryName }" v-model="categoryForm.name" placeholder="Ví dụ: Di tích Lịch sử" @input="clearError('categoryName'); autoFillCategoryCode(); autoSuggestIcon()" />
+                  <input type="text" id="cat-name" class="form-control" :class="{ 'has-error': formErrors.categoryName }" v-model="categoryForm.name" placeholder="Ví dụ: Di tích Lịch sử" @input="clearError('categoryName'); autoFillCategoryCode()" />
                   <span v-if="formErrors.categoryName" class="form-error-msg">{{ formErrors.categoryName }}</span>
                 </div>
                 <div class="form-group">
-                  <label class="form-label">Chọn biểu tượng hiển thị (Icon) *</label>
+                  <label class="form-label">Biểu tượng marker *</label>
+                  <div class="marker-preview-row">
+                    <div class="marker-preview" :style="{ backgroundColor: selectedMarkerIcon?.markerColor || '#6366f1' }">
+                      <img :src="selectedMarkerIcon?.iconUrl || defaultMarkerIconUrl" alt="" />
+                    </div>
+                    <div class="marker-preview-copy">
+                      <strong>{{ selectedMarkerIcon?.name || 'Chưa chọn biểu tượng' }}</strong>
+                      <span>Chọn một biểu tượng bên dưới. Màu marker lấy theo cấu hình trong hệ thống.</span>
+                    </div>
+                  </div>
+
+                  <button type="button" class="btn btn-secondary btn-inline-action" @click="showMarkerIconForm = !showMarkerIconForm">
+                    {{ showMarkerIconForm ? 'Ẩn form thêm biểu tượng' : 'Thêm biểu tượng marker' }}
+                  </button>
+
+                  <div v-if="showMarkerIconForm" class="marker-icon-form">
+                    <div class="form-grid-2">
+                      <div class="form-group">
+                        <label class="form-label" for="marker-icon-name">Tên biểu tượng *</label>
+                        <input id="marker-icon-name" type="text" class="form-control" v-model="markerIconForm.name" placeholder="Ví dụ: Làng nghề" />
+                      </div>
+                      <div class="form-group">
+                        <label class="form-label" for="marker-icon-key">Mã biểu tượng *</label>
+                        <input id="marker-icon-key" type="text" class="form-control" v-model="markerIconForm.key" placeholder="Ví dụ: workshop" />
+                      </div>
+                    </div>
+                    <div class="form-group">
+                      <label class="form-label" for="marker-icon-url">Đường dẫn SVG/icon *</label>
+                      <input id="marker-icon-url" type="text" class="form-control" v-model="markerIconForm.iconUrl" placeholder="https://api.iconify.design/lucide:hammer.svg?color=%23ffffff" />
+                    </div>
+                    <div class="marker-icon-form-footer">
+                      <input type="color" class="marker-color-input" v-model="markerIconForm.markerColor" aria-label="Chọn màu marker" />
+                      <button type="button" class="btn btn-primary" :disabled="modalLoading" @click="saveMarkerIcon">
+                        Lưu biểu tượng
+                      </button>
+                    </div>
+                    <span v-if="formErrors.markerIcon" class="form-error-msg">{{ formErrors.markerIcon }}</span>
+                  </div>
                   
                   <!-- Search box -->
                   <div class="icon-search-wrapper">
@@ -541,18 +578,20 @@
                     <div class="icon-selector-grid">
                       <div 
                         v-for="item in filteredIcons" 
-                        :key="item.value"
+                        :key="item.id"
                         class="icon-select-card"
-                        :class="{ active: categoryForm.icon === item.value }"
-                        @click="categoryForm.icon = item.value"
+                        :class="{ active: categoryForm.markerIconId === item.id }"
+                        @click="setCategoryIcon(item)"
                       >
-                        <i class="fa-solid" :class="'fa-' + item.value" style="font-size: 1.2rem; width: 24px; text-align: center; color: var(--primary);"></i>
+                        <span class="icon-color-dot" :style="{ backgroundColor: item.markerColor }"></span>
+                        <img :src="item.iconUrl" class="icon-select-img" alt="" />
                         <div class="icon-info">
-                          <span class="icon-title" style="font-size: 0.85rem; font-weight: 500;">{{ item.label.split(' / ')[0] }}</span>
+                          <span class="icon-title" style="font-size: 0.85rem; font-weight: 500;">{{ item.name }}</span>
                         </div>
                       </div>
                     </div>
                   </div>
+                  <span v-if="formErrors.categoryIcon" class="form-error-msg">{{ formErrors.categoryIcon }}</span>
                 </div>
                 <div class="form-group">
                   <label class="form-label" for="cat-desc">Mô tả danh mục</label>
@@ -576,7 +615,7 @@
 <script setup lang="ts">
 import { ref, shallowRef, onMounted, computed, watch, nextTick } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { api, type Area, type Place, type PlaceCategory } from '../../config/api';
+import { api, type Area, type Place, type PlaceCategory, type MarkerIcon } from '../../config/api';
 import CustomSelect from '../../components/CustomSelect.vue';
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
@@ -588,6 +627,7 @@ const activeTab = ref('places');
 const areas = ref<Area[]>([]);
 const places = ref<Place[]>([]);
 const categories = ref<PlaceCategory[]>([]);
+const markerIcons = ref<MarkerIcon[]>([]);
 const loading = ref(false);
 const modalLoading = ref(false);
 
@@ -697,11 +737,21 @@ const placeForm = ref({
 
 // Category Modal States
 const showCategoryModal = ref(false);
+const showMarkerIconForm = ref(false);
 const categoryForm = ref({
   name: '',
   code: '',
   description: '',
-  icon: 'landmark'
+  icon: '',
+  iconUrl: '',
+  markerColor: '',
+  markerIconId: '' as number | ''
+});
+const markerIconForm = ref({
+  key: '',
+  name: '',
+  iconUrl: '',
+  markerColor: '#6366f1'
 });
 
 // Computed values
@@ -773,6 +823,7 @@ const loadAllData = async () => {
     areas.value = await api.areas.listAdmin();
     places.value = await api.places.listAdmin();
     categories.value = await api.categories.listAdmin();
+    markerIcons.value = await api.markerIcons.list();
   } catch (error) {
     console.error('Failed to load dashboard data:', error);
   } finally {
@@ -1264,62 +1315,76 @@ const savePlace = async () => {
   }
 };
 
-const allAvailableIcons = [
-  // Kiến trúc / Di tích
-  { value: 'landmark', label: 'Đền chùa / Đình miếu / Di tích cổ kính', cat: 'Kiến trúc / Tâm linh' },
-  { value: 'archway', label: 'Cổng chào / Cổng làng / Di tích lịch sử', cat: 'Kiến trúc' },
-  { value: 'monument', label: 'Tượng đài / Bia đá / Lịch sử danh nhân', cat: 'Lịch sử' },
-  { value: 'museum', label: 'Bảo tàng / Nhà triển lãm / Trưng bày', cat: 'Lịch sử / Văn hóa' },
-  
-  // Ẩm thực
-  { value: 'utensils', label: 'Nhà hàng / Quán ăn / Đặc sản ẩm thực / Ăn uống', cat: 'Ẩm thực' },
-  { value: 'mug-hot', label: 'Quán cà phê / Trà sữa / Tiệm đồ uống', cat: 'Ẩm thực' },
-  
-  // Văn hóa / Lễ hội
-  { value: 'masks-theater', label: 'Làng nghề / Văn hóa truyền thống / Nghệ thuật', cat: 'Văn hóa' },
-  { value: 'calendar-days', label: 'Lễ hội / Sự kiện / Hội làng', cat: 'Văn hóa' },
-  
-  // Thiên nhiên / Sinh thái
-  { value: 'seedling', label: 'Vườn tược / Trang trại / Nông nghiệp sinh thái', cat: 'Sinh thái' },
-  { value: 'mountain', label: 'Núi non / Hang động / Thác nước / Phong cảnh tự nhiên', cat: 'Sinh thái' },
-  { value: 'water', label: 'Sông ngòi / Ao hồ / Suối nguồn / Phong cảnh nước', cat: 'Sinh thái' },
-  { value: 'campground', label: 'Điểm cắm trại / Camping / Dã ngoại ngoài trời', cat: 'Sinh thái' },
-  
-  // Lưu trú / Tiện ích du lịch
-  { value: 'hotel', label: 'Khách sạn / Homestay / Nhà nghỉ / Cơ sở lưu trú', cat: 'Tiện ích' },
-  { value: 'store', label: 'Cửa hàng / Mua sắm lưu niệm / Chợ địa phương', cat: 'Tiện ích' },
-  { value: 'camera', label: 'Điểm check-in / Phong cảnh đẹp / Chụp ảnh lưu niệm', cat: 'Địa danh' }
-];
-
 const iconSearchQuery = ref('');
+const defaultMarkerIconUrl = 'https://api.iconify.design/lucide:map-pin.svg?color=%23ffffff';
+
+const selectedMarkerIcon = computed(() => {
+  return markerIcons.value.find(item => item.id === categoryForm.value.markerIconId) || null;
+});
+
+const normalizeSearchText = (value: string) => {
+  return value.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+};
+
+const setCategoryIcon = (markerIcon: MarkerIcon) => {
+  clearError('categoryIcon');
+  categoryForm.value.markerIconId = markerIcon.id;
+  categoryForm.value.icon = markerIcon.key;
+  categoryForm.value.iconUrl = markerIcon.iconUrl;
+  categoryForm.value.markerColor = markerIcon.markerColor;
+};
 
 const filteredIcons = computed(() => {
-  const q = iconSearchQuery.value.trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-  if (!q) return allAvailableIcons;
-  return allAvailableIcons.filter(item => {
-    const labelClean = item.label.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-    const valClean = item.value.toLowerCase();
-    const catClean = item.cat.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-    return labelClean.includes(q) || valClean.includes(q) || catClean.includes(q);
+  const q = normalizeSearchText(iconSearchQuery.value.trim());
+  if (!q) return markerIcons.value;
+  return markerIcons.value.filter(item => {
+    return normalizeSearchText(item.name).includes(q) || normalizeSearchText(item.key).includes(q);
   });
 });
 
-const autoSuggestIcon = () => {
-  const name = categoryForm.value.name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-  if (name.includes('kien truc') || name.includes('chua') || name.includes('dinh') || name.includes('nha co') || name.includes('mieu') || name.includes('den')) {
-    categoryForm.value.icon = 'landmark';
-  } else if (name.includes('am thuc') || name.includes('an uong') || name.includes('dac san') || name.includes('quan') || name.includes('dua')) {
-    categoryForm.value.icon = 'utensils';
-  } else if (name.includes('lich su') || name.includes('di tich') || name.includes('bao tang') || name.includes('tuong dai') || name.includes('co kinh') || name.includes('xua') || name.includes('ngoai xam')) {
-    categoryForm.value.icon = 'book';
-  } else if (name.includes('van hoa') || name.includes('lang nghe') || name.includes('phong tuc') || name.includes('dan gian') || name.includes('truyen thong')) {
-    categoryForm.value.icon = 'masks-theater';
-  } else if (name.includes('le hoi') || name.includes('su kien') || name.includes('hoi lang') || name.includes('trung thu')) {
-    categoryForm.value.icon = 'calendar-days';
-  } else if (name.includes('thien nhien') || name.includes('sinh thai') || name.includes('nong nghiep') || name.includes('dua luoi') || name.includes('vuon') || name.includes('cay') || name.includes('trang trai')) {
-    categoryForm.value.icon = 'leaf';
-  } else if (name.includes('giai tri') || name.includes('trai nghiem') || name.includes('hoat dong') || name.includes('choi') || name.includes('dap xe')) {
-    categoryForm.value.icon = 'bicycle';
+const resetMarkerIconForm = () => {
+  markerIconForm.value = {
+    key: '',
+    name: '',
+    iconUrl: '',
+    markerColor: '#6366f1'
+  };
+};
+
+const saveMarkerIcon = async () => {
+  clearError('markerIcon');
+  const key = markerIconForm.value.key.trim();
+  const name = markerIconForm.value.name.trim();
+  const iconUrl = markerIconForm.value.iconUrl.trim();
+
+  if (!key || !name || !iconUrl) {
+    formErrors.value.markerIcon = 'Vui lòng nhập đủ tên, mã và đường dẫn biểu tượng';
+    return;
+  }
+
+  if (!/^#[0-9a-f]{6}$/i.test(markerIconForm.value.markerColor)) {
+    formErrors.value.markerIcon = 'Màu marker không hợp lệ';
+    return;
+  }
+
+  modalLoading.value = true;
+  try {
+    const markerIcon = await api.markerIcons.create({
+      key,
+      name,
+      iconUrl,
+      markerColor: markerIconForm.value.markerColor,
+      active: true,
+    });
+    markerIcons.value = [...markerIcons.value.filter(item => item.id !== markerIcon.id), markerIcon]
+      .sort((a, b) => a.name.localeCompare(b.name));
+    setCategoryIcon(markerIcon);
+    resetMarkerIconForm();
+    showMarkerIconForm.value = false;
+  } catch (error: any) {
+    formErrors.value.markerIcon = error.message || 'Lỗi khi lưu biểu tượng marker';
+  } finally {
+    modalLoading.value = false;
   }
 };
 
@@ -1327,11 +1392,16 @@ const autoSuggestIcon = () => {
 const openCategoryModal = () => {
   formErrors.value = {};
   iconSearchQuery.value = '';
+  showMarkerIconForm.value = false;
+  resetMarkerIconForm();
   categoryForm.value = {
     name: '',
     code: '',
     description: '',
-    icon: 'landmark'
+    icon: markerIcons.value[0]?.key || '',
+    iconUrl: markerIcons.value[0]?.iconUrl || '',
+    markerColor: markerIcons.value[0]?.markerColor || '',
+    markerIconId: markerIcons.value[0]?.id || ''
   };
   showCategoryModal.value = true;
 };
@@ -1376,6 +1446,9 @@ const saveCategory = async () => {
   if (!categoryForm.value.name.trim()) {
     formErrors.value.categoryName = 'Vui lòng nhập tên danh mục';
   }
+  if (!categoryForm.value.markerIconId) {
+    formErrors.value.categoryIcon = 'Vui lòng chọn biểu tượng marker';
+  }
   if (Object.keys(formErrors.value).length > 0) {
     return;
   }
@@ -1387,7 +1460,10 @@ const saveCategory = async () => {
       categoryForm.value.name,
       code,
       categoryForm.value.description,
-      categoryForm.value.icon
+      categoryForm.value.icon,
+      categoryForm.value.iconUrl,
+      categoryForm.value.markerColor,
+      categoryForm.value.markerIconId || undefined
     );
     alert('Tạo danh mục mới thành công!');
     showCategoryModal.value = false;
@@ -2164,6 +2240,78 @@ const unpublishPlace = async (place: Place) => {
   gap: 4px;
 }
 
+.marker-preview-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.marker-preview {
+  width: 44px;
+  height: 44px;
+  border-radius: 50% 50% 50% 8px;
+  transform: rotate(-45deg);
+  display: grid;
+  place-items: center;
+  flex: 0 0 44px;
+  box-shadow: var(--shadow-md);
+}
+
+.marker-preview img {
+  width: 20px;
+  height: 20px;
+  transform: rotate(45deg);
+}
+
+.marker-preview-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.marker-preview-copy strong {
+  color: var(--text-primary);
+  font-size: 0.9rem;
+}
+
+.marker-preview-copy span {
+  color: var(--text-secondary);
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+
+.btn-inline-action {
+  width: 100%;
+  justify-content: center;
+  margin-bottom: 12px;
+}
+
+.marker-icon-form {
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 12px;
+  margin-bottom: 12px;
+  background: var(--bg-card);
+}
+
+.marker-icon-form-footer {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.marker-color-input {
+  width: 44px;
+  height: 38px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  padding: 3px;
+  flex: 0 0 44px;
+}
+
 .icon-search-wrapper {
   margin-bottom: 8px;
 }
@@ -2190,6 +2338,7 @@ const unpublishPlace = async (place: Place) => {
   gap: 8px;
   transition: all var(--transition-fast);
   background-color: var(--bg-card);
+  position: relative;
 }
 .icon-select-card:hover {
   border-color: var(--primary);
@@ -2212,6 +2361,19 @@ const unpublishPlace = async (place: Place) => {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+.icon-select-img {
+  width: 22px;
+  height: 22px;
+  flex: 0 0 22px;
+}
+.icon-color-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.65);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.08);
+  flex: 0 0 10px;
 }
 
 /* Maximized Split Screen Place Modal styling */

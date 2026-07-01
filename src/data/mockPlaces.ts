@@ -17,6 +17,9 @@ export interface Place {
   name: string;
   category: string;
   categoryIcon?: string;
+  categoryIconUrl?: string;
+  categoryMarkerColor?: string;
+  categoryMarkerIconId?: number;
   summary: string;
   description: string;
   lat: number;
