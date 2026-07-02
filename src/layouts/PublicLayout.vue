@@ -73,10 +73,11 @@ const toggleDrawer = () => {
 // Guard/check admin authentication state on click
 const handleAdminClick = () => {
   const isAdminLoggedIn = localStorage.getItem('admin_logged_in') === 'true';
+  const search = window.location.search; // Preserves raw query string like ?da-nang
   if (isAdminLoggedIn) {
-    router.push('/admin');
+    router.push(`/admin${search}`);
   } else {
-    router.push('/admin/login');
+    router.push(`/admin/login${search}`);
   }
 };
 

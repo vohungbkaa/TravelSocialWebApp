@@ -6,6 +6,7 @@ export interface User {
   id: string;
   username: string;
   displayName: string;
+  role: string;
 }
 
 export interface AuthResponse {
@@ -209,6 +210,10 @@ export const api = {
   tenant: {
     async config(): Promise<TenantConfig> {
       return api.request<TenantConfig>('/tenant/config');
+    },
+    
+    async listAdmin(): Promise<any[]> {
+      return api.request<any[]>('/tenant/admin/list');
     }
   },
 

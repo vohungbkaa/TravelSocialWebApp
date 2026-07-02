@@ -4,14 +4,22 @@
     <div class="card login-card">
       <div class="login-header">
         <router-link to="/" class="logo-text">
-          <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <svg v-if="!isSystemAdmin" xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
             <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
             <circle cx="12" cy="10" r="3"></circle>
           </svg>
-          <span>Xã Tiến Thắng</span>
+          <svg v-else xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="system-icon">
+            <rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect>
+            <rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect>
+            <line x1="6" y1="6" x2="6.01" y2="6"></line>
+            <line x1="6" y1="18" x2="6.01" y2="18"></line>
+          </svg>
+          <span :class="{ 'system-text': isSystemAdmin }">{{ tenantName }}</span>
         </router-link>
-        <h2>Đăng nhập quản trị</h2>
-        <p>Quản lý bản đồ và nội dung giới thiệu địa phương</p>
+        <h2 v-if="isSystemAdmin">Đăng nhập Super Admin</h2>
+        <h2 v-else>Đăng nhập quản trị</h2>
+        <p v-if="isSystemAdmin">Quản lý toàn bộ hệ thống phân vùng</p>
+        <p v-else>Quản lý bản đồ và nội dung giới thiệu địa phương</p>
       </div>
 
       <form @submit.prevent="handleLogin" class="login-form">
@@ -62,19 +70,29 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
-import { useRouter } from 'vue-router';
+import { ref, onMounted } from 'vue';
+import { useRouter, useRoute } from 'vue-router';
 import { api } from '../../config/api';
+import { readTenantCodeFromUrl } from '../../config/tenant';
 
 const router = useRouter();
+const route = useRoute();
 const email = ref('');
 const password = ref('');
 const loading = ref(false);
 const errorMessage = ref('');
 
+const tenantName = ref('Đang tải...');
+const isSystemAdmin = ref(false);
+
 const fillMockCredentials = () => {
-  email.value = 'admin@travelsocial.xyz';
-  password.value = 'SuperSecureAdminPassword123!';
+  if (isSystemAdmin.value) {
+    email.value = 'admin@travelsocial.xyz';
+    password.value = 'SuperSecureAdminPassword123!';
+  } else {
+    email.value = 'admin@tienthang.xyz';
+    password.value = '123456';
+  }
   errorMessage.value = '';
 };
 
@@ -84,13 +102,39 @@ const handleLogin = async () => {
   
   try {
     await api.auth.login(email.value, password.value);
-    router.push('/admin');
+    
+    // Clear any active context if logging into system
+    if (isSystemAdmin.value) {
+      localStorage.removeItem('admin_active_tenant');
+      localStorage.removeItem('admin_active_tenant_name');
+    }
+    
+    router.push('/admin' + window.location.search);
   } catch (error: any) {
     errorMessage.value = error.message || 'Thông tin đăng nhập không chính xác hoặc lỗi kết nối.';
   } finally {
     loading.value = false;
   }
 };
+
+onMounted(async () => {
+  const urlTenant = readTenantCodeFromUrl();
+  
+  // If no tenant is present in the URL, default to System Admin mode
+  if (!urlTenant) {
+    isSystemAdmin.value = true;
+    tenantName.value = 'Hệ thống Quản trị';
+    sessionStorage.removeItem('tenant_code_override');
+  } else {
+    try {
+      const config = await api.tenant.config();
+      tenantName.value = config.name;
+    } catch (error) {
+      console.error('Failed to load tenant config', error);
+      tenantName.value = 'Không tìm thấy phân vùng';
+    }
+  }
+});
 </script>
 
 
@@ -130,6 +174,17 @@ const handleLogin = async () => {
 .login-header .logo-text {
   justify-content: center;
   margin-bottom: 24px;
+}
+
+.system-icon {
+  color: #f59e0b;
+}
+
+.system-text {
+  background: linear-gradient(135deg, #f59e0b, #ea580c);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-weight: 800;
 }
 
 .login-header h2 {

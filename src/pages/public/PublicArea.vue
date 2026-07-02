@@ -549,31 +549,18 @@ const initTenant = async () => {
     const areaConfig = await api.areas.getMapConfig(defaultSlug);
     const areaScope = applyAreaMapConfig(areaConfig);
     
-    if (areaScope.provinceCode === 'hanoi') {
-      const hasHanoi = 'hanoi' in route.query;
-      const tenantParam = route.query.tenant;
-      if (!hasHanoi || tenantParam !== areaScope.slug) {
-        await router.replace({
-          path: '/travel',
-          query: {
-            hanoi: null,
-            tenant: areaScope.slug,
-          },
-        });
-        return;
-      }
-    } else {
-      const hasTenantKey = areaScope.slug in route.query;
-      const keys = Object.keys(route.query);
-      if (!hasTenantKey || keys.length !== 1) {
-        await router.replace({
-          path: '/travel',
-          query: {
-            [areaScope.slug]: null,
-          },
-        });
-        return;
-      }
+    // Strictly enforce ?tenant= slug format
+    const tenantParam = route.query.tenant;
+    const hasOtherKeys = Object.keys(route.query).length > 1 || (Object.keys(route.query).length === 1 && !tenantParam);
+    
+    if (tenantParam !== areaScope.slug || hasOtherKeys) {
+      await router.replace({
+        path: '/travel',
+        query: {
+          tenant: areaScope.slug,
+        },
+      });
+      return;
     }
     await loadData();
   } catch (error: any) {

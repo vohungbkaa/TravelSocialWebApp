@@ -9,6 +9,7 @@ import AdminLayout from '../layouts/AdminLayout.vue';
 import PublicArea from '../pages/public/PublicArea.vue';
 import AdminDashboard from '../pages/admin/AdminDashboard.vue';
 import AdminLogin from '../pages/admin/AdminLogin.vue';
+import SystemTenants from '../pages/admin/SystemTenants.vue';
 
 const routes: Array<RouteRecordRaw> = [
   // Public Paths
@@ -42,9 +43,20 @@ const routes: Array<RouteRecordRaw> = [
     children: [
       {
         path: '',
-        redirect: '/admin/areas'
+        redirect: () => {
+          const user = JSON.parse(localStorage.getItem('admin_user') || '{}');
+          const activeTenant = localStorage.getItem('admin_active_tenant');
+          if (user.role === 'SUPER_ADMIN' && !activeTenant) {
+            return '/admin/system/tenants';
+          }
+          return '/admin/areas';
+        }
       },
-      // Placeholder routes for project-setup
+      {
+        path: 'system/tenants',
+        name: 'SystemTenants',
+        component: SystemTenants
+      },
       {
         path: 'areas',
         name: 'AdminAreas',

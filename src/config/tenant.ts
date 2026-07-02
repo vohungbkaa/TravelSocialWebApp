@@ -14,10 +14,6 @@ export const readTenantCodeFromUrl = (): string | undefined => {
   if (tenantParam) {
     return normalizeTenantCode(tenantParam);
   }
-  const keys = Array.from(params.keys());
-  if (keys.length > 0) {
-    return normalizeTenantCode(keys[0]);
-  }
   return undefined;
 };
 
@@ -43,6 +39,14 @@ export const getTenantRequestHeaders = (): Record<string, string> => {
   const headers: Record<string, string> = {
     'X-Tenant-Host': window.location.hostname,
   };
+  
+  // Admin context switching has highest priority
+  const adminActiveTenant = localStorage.getItem('admin_active_tenant');
+  if (adminActiveTenant) {
+    headers['X-Tenant-Code'] = adminActiveTenant;
+    return headers;
+  }
+
   const codeOverride = getTenantCodeOverride();
   if (codeOverride) {
     headers['X-Tenant-Code'] = codeOverride;
