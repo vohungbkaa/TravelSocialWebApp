@@ -18,16 +18,10 @@ const routes: Array<RouteRecordRaw> = [
     children: [
       {
         path: '',
-        name: 'Landing',
-        component: PublicArea
+        redirect: '/travel'
       },
       {
-        path: ':provinceCode',
-        name: 'PublicProvince',
-        component: PublicArea
-      },
-      {
-        path: ':provinceCode/:areaSlug',
+        path: 'travel',
         name: 'PublicArea',
         component: PublicArea
       }

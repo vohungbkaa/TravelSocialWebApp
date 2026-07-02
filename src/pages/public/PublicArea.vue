@@ -385,13 +385,15 @@ import type { Place, PlaceMedia, ExploreSection } from '../../data/mockPlaces';
 import { MAP_CONFIG, applyAreaMapConfig, applyTenantConfig } from '../../config/map';
 import type { AreaScope } from '../../config/map';
 import { api } from '../../config/api';
-import type { PlaceCategory } from '../../config/api';
+import type { PlaceCategory, TenantConfig } from '../../config/api';
 
 // Area metadata from route params and router
 const route = useRoute();
 const router = useRouter();
+const activeTenantConfig = ref<TenantConfig | null>(null);
+
 const areaSlug = computed(() => {
-  return (route.params.areaSlug as string) || MAP_CONFIG.defaultAreaSlug;
+  return activeTenantConfig.value?.map.defaultAreaSlug || MAP_CONFIG.defaultAreaSlug;
 });
 
 const isTenantNotFound = ref(false);
@@ -540,6 +542,7 @@ const initTenant = async () => {
     currentArea.value = null;
 
     const tenantConfig = await api.tenant.config();
+    activeTenantConfig.value = tenantConfig;
     applyTenantConfig(tenantConfig);
     
     const defaultSlug = tenantConfig.map.defaultAreaSlug || MAP_CONFIG.defaultAreaSlug;
@@ -547,18 +550,29 @@ const initTenant = async () => {
     const areaScope = applyAreaMapConfig(areaConfig);
     
     if (areaScope.provinceCode === 'hanoi') {
-      if (route.path !== '/hanoi') {
+      const hasHanoi = 'hanoi' in route.query;
+      const tenantParam = route.query.tenant;
+      if (!hasHanoi || tenantParam !== areaScope.slug) {
         await router.replace({
-          path: '/hanoi',
-          query: route.query,
+          path: '/travel',
+          query: {
+            hanoi: null,
+            tenant: areaScope.slug,
+          },
         });
+        return;
       }
     } else {
-      if (route.path !== '/') {
+      const hasTenantKey = areaScope.slug in route.query;
+      const keys = Object.keys(route.query);
+      if (!hasTenantKey || keys.length !== 1) {
         await router.replace({
-          path: '/',
-          query: route.query,
+          path: '/travel',
+          query: {
+            [areaScope.slug]: null,
+          },
         });
+        return;
       }
     }
     await loadData();
@@ -573,9 +587,9 @@ onMounted(async () => {
   await initTenant();
 });
 
-watch(() => route.query.tenant, async () => {
+watch(() => route.query, async () => {
   await initTenant();
-});
+}, { deep: true });
 
 // Reset selection on area change
 watch(areaSlug, () => {

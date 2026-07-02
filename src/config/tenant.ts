@@ -9,7 +9,16 @@ export const readTenantCodeFromUrl = (): string | undefined => {
   if (typeof window === 'undefined') {
     return undefined;
   }
-  return normalizeTenantCode(new URLSearchParams(window.location.search).get('tenant'));
+  const params = new URLSearchParams(window.location.search);
+  const tenantParam = params.get('tenant');
+  if (tenantParam) {
+    return normalizeTenantCode(tenantParam);
+  }
+  const keys = Array.from(params.keys());
+  if (keys.length > 0) {
+    return normalizeTenantCode(keys[0]);
+  }
+  return undefined;
 };
 
 export const getTenantCodeOverride = (): string | undefined => {
