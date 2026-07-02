@@ -118,10 +118,15 @@ const publicSiteUrl = computed(() => {
 });
 
 const handleLogout = () => {
+  const currentTenant = localStorage.getItem('admin_active_tenant') || sessionStorage.getItem('tenant_code_override');
   api.auth.logout();
   localStorage.removeItem('admin_active_tenant');
   localStorage.removeItem('admin_active_tenant_name');
-  router.push('/admin/login');
+  if (currentTenant) {
+    router.push(`/admin/login?tenant=${currentTenant}`);
+  } else {
+    router.push('/admin/login');
+  }
 };
 
 const exitTenantContext = () => {

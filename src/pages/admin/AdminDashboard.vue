@@ -184,15 +184,13 @@
           <thead>
             <tr>
               <th>Tên khu vực</th>
-              <th class="col-slug">Đường dẫn thân thiện (Slug)</th>
-              <th class="col-coords">Tọa độ tâm</th>
               <th class="col-status">Trạng thái</th>
               <th class="col-actions actions-header">Thao tác</th>
             </tr>
           </thead>
           <tbody>
             <tr v-if="filteredAreas.length === 0">
-              <td colspan="5" class="empty-cell">Không tìm thấy khu vực nào.</td>
+              <td colspan="3" class="empty-cell">Không tìm thấy khu vực nào.</td>
             </tr>
             <tr v-for="area in filteredAreas" :key="area.id">
               <td>
@@ -203,10 +201,6 @@
                     <p class="area-desc-short" :title="area.description">{{ area.description || 'Không có mô tả' }}</p>
                   </div>
                 </div>
-              </td>
-              <td class="col-slug"><code class="slug-text">/{{ area.provinceCode || 'hanoi' }}/{{ area.slug }}</code></td>
-              <td class="col-coords">
-                <code class="coordinate-text">{{ parseFloat(area.centerLat.toString()).toFixed(4) }}, {{ parseFloat(area.centerLng.toString()).toFixed(4) }}</code>
               </td>
               <td class="col-status">
                 <span class="badge-status" :class="area.published ? 'published' : 'draft'">
@@ -220,9 +214,6 @@
                   </router-link>
                   <button class="btn btn-secondary btn-xs btn-edit" @click="openAreaModal(area)">
                     Sửa
-                  </button>
-                  <button class="btn btn-danger btn-xs btn-delete" @click="deleteArea(area)">
-                    Xóa
                   </button>
                 </div>
               </td>
@@ -2052,8 +2043,10 @@ const unpublishPlace = async (place: Place) => {
   color: var(--text-secondary);
   margin-top: 2px;
   font-weight: 400;
-  max-width: 260px;
-  white-space: nowrap;
+  max-width: 480px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
   overflow: hidden;
   text-overflow: ellipsis;
 }
