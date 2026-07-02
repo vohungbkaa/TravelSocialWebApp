@@ -484,6 +484,33 @@
                     </span>
                   </div>
 
+                  <div class="form-group">
+                    <label class="form-label" for="place-lat">Vĩ độ (Latitude) <span class="required-star">*</span></label>
+                    <input 
+                      type="number" 
+                      step="0.000001" 
+                      id="place-lat" 
+                      class="form-control" 
+                      :class="{ 'has-error': formErrors.placeCoords }"
+                      v-model.number="placeForm.latitude" 
+                      placeholder="Ví dụ: 16.0612"
+                      @input="clearError('placeCoords')"
+                    />
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label" for="place-lng">Kinh độ (Longitude) <span class="required-star">*</span></label>
+                    <input 
+                      type="number" 
+                      step="0.000001" 
+                      id="place-lng" 
+                      class="form-control" 
+                      :class="{ 'has-error': formErrors.placeCoords }"
+                      v-model.number="placeForm.longitude" 
+                      placeholder="Ví dụ: 108.2268"
+                      @input="clearError('placeCoords')"
+                    />
+                  </div>
+
 
 
                   <div class="form-group form-grid-full">
@@ -772,6 +799,8 @@ const placeForm = ref({
   localTip: '',
   bestTime: '',
 });
+
+const activeAreaBounds = ref<[[number, number], [number, number]] | null>(null);
 
 // Category Modal States
 const showCategoryModal = ref(false);
@@ -1163,6 +1192,7 @@ const initModalMap = async () => {
   }
 
   const hasCoords = placeForm.value.latitude && placeForm.value.longitude;
+  activeAreaBounds.value = areaBounds;
   const lat = hasCoords ? placeForm.value.latitude : (areaCenter?.[1] || 21.195);
   const lng = hasCoords ? placeForm.value.longitude : (areaCenter?.[0] || 105.6775);
 
@@ -1424,7 +1454,17 @@ const savePlace = async () => {
   if (!placeForm.value.latitude || !placeForm.value.longitude || isNaN(placeForm.value.latitude) || isNaN(placeForm.value.longitude)) {
     formErrors.value.placeCoords = 'Vui lòng cắm mốc định vị địa danh trên bản đồ (click chọn vị trí hoặc tìm tọa độ tự động từ địa chỉ).';
   }
+  
   if (Object.keys(formErrors.value).length > 0) {
+    await nextTick();
+    const firstErrorEl = document.querySelector('.has-error, .map-has-error');
+    if (firstErrorEl) {
+      firstErrorEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      const input = firstErrorEl.querySelector('input, textarea, select') || firstErrorEl;
+      if (input && typeof (input as any).focus === 'function') {
+        (input as any).focus();
+      }
+    }
     return;
   }
 
