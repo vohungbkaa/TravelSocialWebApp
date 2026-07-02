@@ -28,6 +28,15 @@
         </div>
 
         <nav class="nav-links">
+          <!-- Back to Admin Dashboard Button -->
+          <router-link v-if="showBackToAdmin" to="/admin" class="btn-back-admin" aria-label="Quay lại trang quản trị">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="19" y1="12" x2="5" y2="12"></line>
+              <polyline points="12 19 5 12 12 5"></polyline>
+            </svg>
+            <span>Quay lại Quản trị</span>
+          </router-link>
+          
           <!-- Admin Avatar Icon Button -->
           <button @click="handleAdminClick" class="btn-avatar" aria-label="Mở trang quản trị">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
@@ -59,6 +68,17 @@ const route = useRoute();
 const router = useRouter();
 
 const tenantName = ref('Travel Social');
+
+const showBackToAdmin = computed(() => {
+  const loggedIn = localStorage.getItem('admin_logged_in') === 'true';
+  if (!loggedIn) return false;
+  try {
+    const user = JSON.parse(localStorage.getItem('admin_user') || '{}');
+    return user.role === 'SUPER_ADMIN' || user.role === 'ADMIN';
+  } catch {
+    return false;
+  }
+});
 
 // Provide mobile drawer open state to children (specifically PublicArea.vue)
 const isMobileDrawerOpen = ref(false);
@@ -111,6 +131,29 @@ onMounted(async () => {
 .nav-links {
   display: flex;
   align-items: center;
+}
+
+.btn-back-admin {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--primary);
+  background-color: var(--primary-light);
+  border: 1px solid rgba(99, 102, 241, 0.2);
+  border-radius: 9999px;
+  text-decoration: none;
+  transition: all var(--transition-fast, 0.15s);
+  margin-right: 12px;
+}
+
+.btn-back-admin:hover {
+  background-color: var(--primary);
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.15);
+  transform: translateY(-0.5px);
 }
 
 .btn-avatar {

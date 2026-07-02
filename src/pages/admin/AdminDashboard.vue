@@ -656,7 +656,7 @@ import { api, type Area, type Place, type PlaceCategory, type MarkerIcon } from 
 import CustomSelect from '../../components/CustomSelect.vue';
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
-import { MAP_CONFIG } from '../../config/map';
+import { MAP_CONFIG, applyTenantConfig, loadLocalizedMapStyle } from '../../config/map';
 
 const route = useRoute();
 const router = useRouter();
@@ -873,6 +873,9 @@ onMounted(() => {
 const loadAllData = async () => {
   loading.value = true;
   try {
+    const tenantConfig = await api.tenant.config();
+    applyTenantConfig(tenantConfig);
+
     areas.value = await api.areas.listAdmin();
     places.value = await api.places.listAdmin();
     categories.value = await api.categories.listAdmin();
@@ -1166,9 +1169,10 @@ const initModalMap = async () => {
   const bounds = areaBounds ? getPaddedBounds(areaBounds) : undefined;
 
   try {
+    const localizedStyle = await loadLocalizedMapStyle();
     modalMap.value = new maplibregl.Map({
       container: modalMapEl.value,
-      style: MAP_CONFIG.styleUrl,
+      style: localizedStyle,
       center: [lng, lat],
       zoom: areaZoom,
       minZoom: MAP_CONFIG.minZoom,

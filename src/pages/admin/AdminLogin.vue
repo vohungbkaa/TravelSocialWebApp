@@ -58,19 +58,16 @@
       </form>
 
       <div class="login-footer">
-        <button class="btn btn-secondary btn-sm w-full" @click="fillMockCredentials">
-          Dùng tài khoản demo
-        </button>
-        <router-link to="/" class="back-link">
+        <a v-if="!isSystemAdmin" :href="backToMapUrl" class="back-link">
           &larr; Quay lại trang bản đồ
-        </router-link>
+        </a>
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { api } from '../../config/api';
 import { readTenantCodeFromUrl } from '../../config/tenant';
@@ -85,16 +82,13 @@ const errorMessage = ref('');
 const tenantName = ref('Đang tải...');
 const isSystemAdmin = ref(false);
 
-const fillMockCredentials = () => {
-  if (isSystemAdmin.value) {
-    email.value = 'admin@travelsocial.xyz';
-    password.value = 'SuperSecureAdminPassword123!';
-  } else {
-    email.value = 'admin@tienthang.xyz';
-    password.value = '123456';
+const backToMapUrl = computed(() => {
+  const urlTenant = readTenantCodeFromUrl();
+  if (urlTenant) {
+    return `/travel?tenant=${urlTenant}`;
   }
-  errorMessage.value = '';
-};
+  return '/';
+});
 
 const handleLogin = async () => {
   loading.value = true;
