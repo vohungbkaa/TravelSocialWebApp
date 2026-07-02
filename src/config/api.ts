@@ -1,3 +1,5 @@
+import { getTenantRequestHeaders } from './tenant';
+
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api/v1';
 
 export interface User {
@@ -45,6 +47,42 @@ export interface Area {
   centerLng: number;
   defaultRadiusKm: number;
   published: boolean;
+}
+
+export interface TenantConfig {
+  code: string;
+  name: string;
+  domain: string;
+  theme?: Record<string, unknown>;
+  features: Record<string, boolean>;
+  map: {
+    defaultAreaSlug?: string;
+    center?: [number, number];
+    zoom: number;
+    minZoom: number;
+    maxZoom: number;
+  };
+}
+
+export interface AreaMapConfig {
+  slug: string;
+  name: string;
+  provinceCode?: string;
+  level: 'province' | 'ward';
+  center: [number, number];
+  zoom: number;
+  bounds?: [[number, number], [number, number]];
+  boundaryGeoJson?: any;
+  boundaryGeoJsonUrl?: string;
+  description?: string;
+  layers: Array<{
+    key: string;
+    type: string;
+    name: string;
+    geoJson?: any;
+    geoJsonUrl?: string;
+    style?: Record<string, unknown>;
+  }>;
 }
 
 export interface PlaceImage {
@@ -103,6 +141,9 @@ export const api = {
   // Helper for requests
   async request<T>(endpoint: string, options: ApiRequestOptions = {}): Promise<T> {
     const headers = new Headers(options.headers || {});
+    Object.entries(getTenantRequestHeaders()).forEach(([key, value]) => {
+      headers.set(key, value);
+    });
     
     // Add bearer token if logged in
     const token = localStorage.getItem('admin_access_token');
@@ -161,6 +202,13 @@ export const api = {
         method: 'POST',
         body: formData,
       });
+    }
+  },
+
+  // Tenant APIs
+  tenant: {
+    async config(): Promise<TenantConfig> {
+      return api.request<TenantConfig>('/tenant/config');
     }
   },
 
@@ -266,6 +314,10 @@ export const api = {
 
     async getPlaces(slug: string): Promise<Place[]> {
       return api.request<Place[]>(`/areas/${slug}/places`);
+    },
+
+    async getMapConfig(slug: string): Promise<AreaMapConfig> {
+      return api.request<AreaMapConfig>(`/areas/${slug}/map-config`);
     }
   },
 

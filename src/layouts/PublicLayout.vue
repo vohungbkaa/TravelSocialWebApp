@@ -23,7 +23,7 @@
               <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
               <circle cx="12" cy="10" r="3"></circle>
             </svg>
-            <span>Xã Tiến Thắng</span>
+            <span>{{ tenantName }}</span>
           </router-link>
         </div>
 
@@ -51,17 +51,20 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, provide } from 'vue';
+import { ref, computed, provide, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import { api } from '../config/api';
 
 const route = useRoute();
 const router = useRouter();
+
+const tenantName = ref('Travel Social');
 
 // Provide mobile drawer open state to children (specifically PublicArea.vue)
 const isMobileDrawerOpen = ref(false);
 provide('isMobileDrawerOpen', isMobileDrawerOpen);
 
-const hasDrawer = computed(() => route.name === 'PublicArea');
+const hasDrawer = computed(() => route.name === 'PublicArea' || route.name === 'PublicProvince' || route.name === 'Landing');
 
 const toggleDrawer = () => {
   isMobileDrawerOpen.value = !isMobileDrawerOpen.value;
@@ -76,6 +79,15 @@ const handleAdminClick = () => {
     router.push('/admin/login');
   }
 };
+
+onMounted(async () => {
+  try {
+    const config = await api.tenant.config();
+    tenantName.value = config.name;
+  } catch (error) {
+    console.error('Failed to load tenant config in PublicLayout:', error);
+  }
+});
 </script>
 
 <style scoped>

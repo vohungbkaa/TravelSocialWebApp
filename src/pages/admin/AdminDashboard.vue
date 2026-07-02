@@ -204,7 +204,7 @@
                   </div>
                 </div>
               </td>
-              <td class="col-slug"><code class="slug-text">/{{ area.provinceCode || 'hn' }}/{{ area.slug }}</code></td>
+              <td class="col-slug"><code class="slug-text">/{{ area.provinceCode || 'hanoi' }}/{{ area.slug }}</code></td>
               <td class="col-coords">
                 <code class="coordinate-text">{{ parseFloat(area.centerLat.toString()).toFixed(4) }}, {{ parseFloat(area.centerLng.toString()).toFixed(4) }}</code>
               </td>
@@ -215,7 +215,7 @@
               </td>
               <td class="col-actions">
                 <div class="actions-cell">
-                  <router-link :to="`/${area.provinceCode || 'hn'}/${area.slug}`" class="btn btn-secondary btn-xs btn-action" target="_blank">
+                  <router-link :to="`/${area.provinceCode || 'hanoi'}/${area.slug}`" class="btn btn-secondary btn-xs btn-action" target="_blank">
                     Xem bản đồ
                   </router-link>
                   <button class="btn btn-secondary btn-xs btn-edit" @click="openAreaModal(area)">
@@ -319,7 +319,7 @@
                 </div>
                 <div class="form-group">
                   <label class="form-label" for="area-province">Mã Tỉnh/Thành phố *</label>
-                  <input type="text" id="area-province" class="form-control" :class="{ 'has-error': formErrors.areaProvince }" v-model="areaForm.provinceCode" placeholder="Ví dụ: hn" @input="clearError('areaProvince')" />
+                  <input type="text" id="area-province" class="form-control" :class="{ 'has-error': formErrors.areaProvince }" v-model="areaForm.provinceCode" placeholder="Ví dụ: hanoi" @input="clearError('areaProvince')" />
                   <span v-if="formErrors.areaProvince" class="form-error-msg">{{ formErrors.areaProvince }}</span>
                 </div>
                 <div class="form-group">
@@ -749,7 +749,7 @@ const editingArea = ref<Area | null>(null);
 const areaForm = ref({
   name: '',
   slug: '',
-  provinceCode: 'hn',
+  provinceCode: 'hanoi',
   description: '',
   coverUrl: '',
   centerLat: 21.195,
@@ -901,7 +901,7 @@ const openAreaModal = (area?: Area) => {
     areaForm.value = {
       name: area.name,
       slug: area.slug,
-      provinceCode: area.provinceCode || 'hn',
+      provinceCode: area.provinceCode || 'hanoi',
       description: area.description || '',
       coverUrl: area.coverUrl || '',
       centerLat: Number(area.centerLat),
@@ -914,7 +914,7 @@ const openAreaModal = (area?: Area) => {
     areaForm.value = {
       name: '',
       slug: '',
-      provinceCode: 'hn',
+      provinceCode: 'hanoi',
       description: '',
       coverUrl: '',
       centerLat: 21.195,
@@ -1016,7 +1016,7 @@ const openPlaceModal = (place?: Place) => {
       description: '',
       categoryId: '',
       markerIconId: '',
-      areaId: areas.value.find(a => a.slug === 'tien-thang')?.id || areas.value[0]?.id || '',
+      areaId: areas.value[0]?.id || '',
       address: '',
       latitude: null as any,
       longitude: null as any,
@@ -1128,25 +1128,60 @@ const getPaddedBounds = (bounds: [[number, number], [number, number]], padding: 
   ] as [[number, number], [number, number]];
 };
 
+const getSelectedPlaceArea = () => {
+  return areas.value.find(area => area.id === placeForm.value.areaId) || areas.value[0];
+};
+
+const getAreaFallbackBounds = (area: Area): [[number, number], [number, number]] => {
+  const lat = Number(area.centerLat);
+  const lng = Number(area.centerLng);
+  const radius = Number(area.defaultRadiusKm) || 3;
+  const latDiff = radius / 111.0;
+  const lngDiff = radius / (111.0 * Math.cos(lat * Math.PI / 180.0));
+  return [
+    [lng - lngDiff, lat - latDiff],
+    [lng + lngDiff, lat + latDiff],
+  ];
+};
+
 const initModalMap = async () => {
   await nextTick();
   if (!modalMapEl.value) return;
 
-  const hasCoords = placeForm.value.latitude && placeForm.value.longitude;
-  const lat = hasCoords ? placeForm.value.latitude : 21.195;
-  const lng = hasCoords ? placeForm.value.longitude : 105.6775;
+  const selectedArea = getSelectedPlaceArea();
+  let areaBoundary: any | undefined;
+  let areaBounds: [[number, number], [number, number]] | undefined;
+  let areaCenter: [number, number] | undefined;
+  let areaZoom = 13;
 
-  const config = MAP_CONFIG.areas['tien-thang'];
-  const bounds = config ? getPaddedBounds(config.bounds) : undefined;
+  if (selectedArea) {
+    areaCenter = [Number(selectedArea.centerLng), Number(selectedArea.centerLat)];
+    areaBounds = getAreaFallbackBounds(selectedArea);
+    try {
+      const mapConfig = await api.areas.getMapConfig(selectedArea.slug);
+      areaBoundary = mapConfig.boundaryGeoJson;
+      areaBounds = mapConfig.bounds || areaBounds;
+      areaCenter = mapConfig.center || areaCenter;
+      areaZoom = mapConfig.zoom || areaZoom;
+    } catch (error) {
+      console.error('Failed to load modal map config from backend:', error);
+    }
+  }
+
+  const hasCoords = placeForm.value.latitude && placeForm.value.longitude;
+  const lat = hasCoords ? placeForm.value.latitude : (areaCenter?.[1] || 21.195);
+  const lng = hasCoords ? placeForm.value.longitude : (areaCenter?.[0] || 105.6775);
+
+  const bounds = areaBounds ? getPaddedBounds(areaBounds) : undefined;
 
   try {
     modalMap.value = new maplibregl.Map({
       container: modalMapEl.value,
       style: MAP_CONFIG.styleUrl,
       center: [lng, lat],
-      zoom: 13,
-      minZoom: 12.0,
-      maxZoom: 18,
+      zoom: areaZoom,
+      minZoom: MAP_CONFIG.minZoom,
+      maxZoom: MAP_CONFIG.maxZoom,
       maxBounds: bounds,
       attributionControl: false
     });
@@ -1156,11 +1191,10 @@ const initModalMap = async () => {
     modalMap.value.on('load', async () => {
       if (!modalMap.value) return;
 
-      // 1. Fetch boundary GeoJSON and add layers
+      // 1. Add boundary GeoJSON from tenant-aware backend config.
       try {
-        const responseGeoJson = await fetch('/data/tien-thang.geojson');
-        if (responseGeoJson.ok) {
-          const boundaryData = await responseGeoJson.json();
+        const boundaryData = areaBoundary;
+        if (boundaryData) {
 
           modalMap.value.addSource('area-boundary', {
             type: 'geojson',
@@ -1294,6 +1328,16 @@ watch([() => placeForm.value.latitude, () => placeForm.value.longitude], ([newLa
     }
     modalMap.value.setCenter([newLng, newLat]);
   }
+});
+
+watch(() => placeForm.value.areaId, () => {
+  if (!showPlaceModal.value) return;
+  if (!editingPlace.value) {
+    placeForm.value.latitude = null as any;
+    placeForm.value.longitude = null as any;
+  }
+  destroyModalMap();
+  initModalMap();
 });
 
 watch(effectivePlaceMarkerIcon, () => {

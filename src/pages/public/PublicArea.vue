@@ -1,5 +1,26 @@
 <template>
-  <div class="public-area animate-fade-in">
+  <div v-if="isTenantNotFound" class="not-found-container animate-fade-in">
+    <div class="glass-error-card animate-scale-up">
+      <div class="error-icon-box">
+        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="12" y1="8" x2="12" y2="12"></line>
+          <line x1="12" y1="16" x2="12.01" y2="16"></line>
+        </svg>
+      </div>
+      <h1 class="error-title">Không tìm thấy địa điểm</h1>
+      <p class="error-message">
+        Không gian du lịch hoặc điểm đến bạn yêu cầu hiện không tồn tại hoặc chưa được kích hoạt trên hệ thống của chúng tôi.
+      </p>
+      <div class="error-actions">
+        <a href="/?tenant=tien-thang" class="btn btn-primary">
+          Quay về trang chủ
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <div v-else class="public-area animate-fade-in">
     <!-- Drawer Backdrop Overlay for Mobile -->
     <div 
       v-if="isMobileDrawerOpen" 
@@ -357,19 +378,24 @@
 <script setup lang="ts">
 import { ref, computed, watch, inject, onMounted } from 'vue';
 import type { Ref } from 'vue';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import PublicMap from '../../components/map/PublicMap.vue';
 import CustomSelect from '../../components/CustomSelect.vue';
 import type { Place, PlaceMedia, ExploreSection } from '../../data/mockPlaces';
-import { MAP_CONFIG } from '../../config/map';
+import { MAP_CONFIG, applyAreaMapConfig, applyTenantConfig } from '../../config/map';
 import type { AreaScope } from '../../config/map';
 import { api } from '../../config/api';
 import type { PlaceCategory } from '../../config/api';
 
-// Area metadata from route params
+// Area metadata from route params and router
 const route = useRoute();
-const areaSlug = computed(() => route.params.areaSlug as string || 'ha-noi');
+const router = useRouter();
+const areaSlug = computed(() => {
+  return (route.params.areaSlug as string) || MAP_CONFIG.defaultAreaSlug;
+});
 
+const isTenantNotFound = ref(false);
+const errorMessage = ref('');
 const currentArea = ref<AreaScope | null>(null);
 
 const areaConfig = computed<AreaScope>(() => {
@@ -466,36 +492,10 @@ const mapBackendPlace = (p: any): Place => {
 
 const loadArea = async () => {
   try {
-    const area = await api.areas.get(areaSlug.value);
-    if (area) {
-      const lat = Number(area.centerLat);
-      const lng = Number(area.centerLng);
-      const radius = Number(area.defaultRadiusKm) || 3;
-      
-      const latDiff = radius / 111.0;
-      const lngDiff = radius / (111.0 * Math.cos(lat * Math.PI / 180.0));
-      
-      const hardcoded = MAP_CONFIG.areas[area.slug];
-      
-      currentArea.value = {
-        slug: area.slug,
-        name: area.name,
-        provinceCode: area.provinceCode || 'hn',
-        level: hardcoded?.level || 'ward',
-        parentSlug: hardcoded?.parentSlug,
-        center: [lng, lat],
-        zoom: hardcoded?.zoom || 13.5,
-        bounds: hardcoded?.bounds || [
-          [lng - lngDiff, lat - latDiff],
-          [lng + lngDiff, lat + latDiff]
-        ],
-        boundaryGeoJson: hardcoded?.boundaryGeoJson,
-        boundaryGeoJsonUrl: hardcoded?.boundaryGeoJsonUrl,
-        description: area.description || ''
-      };
-    }
+    const config = await api.areas.getMapConfig(areaSlug.value);
+    currentArea.value = applyAreaMapConfig(config);
   } catch (error) {
-    console.error('Failed to load area details from backend:', error);
+    console.error('Failed to load area map config from backend:', error);
     currentArea.value = null;
   }
 };
@@ -532,8 +532,49 @@ const loadData = async () => {
   ]);
 };
 
-onMounted(() => {
-  loadData();
+const initTenant = async () => {
+  try {
+    isTenantNotFound.value = false;
+    errorMessage.value = '';
+    selectedPlace.value = null;
+    currentArea.value = null;
+
+    const tenantConfig = await api.tenant.config();
+    applyTenantConfig(tenantConfig);
+    
+    const defaultSlug = tenantConfig.map.defaultAreaSlug || MAP_CONFIG.defaultAreaSlug;
+    const areaConfig = await api.areas.getMapConfig(defaultSlug);
+    const areaScope = applyAreaMapConfig(areaConfig);
+    
+    if (areaScope.provinceCode === 'hanoi') {
+      if (route.path !== '/hanoi') {
+        await router.replace({
+          path: '/hanoi',
+          query: route.query,
+        });
+      }
+    } else {
+      if (route.path !== '/') {
+        await router.replace({
+          path: '/',
+          query: route.query,
+        });
+      }
+    }
+    await loadData();
+  } catch (error: any) {
+    console.error('Failed to initialize tenant config in PublicArea:', error);
+    isTenantNotFound.value = true;
+    errorMessage.value = error?.message || 'Không tìm thấy tenant hoặc cấu hình không hợp lệ.';
+  }
+};
+
+onMounted(async () => {
+  await initTenant();
+});
+
+watch(() => route.query.tenant, async () => {
+  await initTenant();
 });
 
 // Reset selection on area change
@@ -1784,6 +1825,108 @@ watch(selectedPlace, () => {
   .btn-tts {
     padding: 8px;
     border-radius: 50%;
+  }
+}
+
+/* Tenant Not Found Error Screen styling */
+.not-found-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(100vh - 56px);
+  background: radial-gradient(circle at center, var(--bg-card) 0%, var(--bg-app) 100%);
+  padding: 24px;
+}
+
+.glass-error-card {
+  max-width: 480px;
+  width: 100%;
+  padding: 40px 32px;
+  background: rgba(255, 255, 255, 0.45);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.08);
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+
+/* Support dark mode theme compatibility */
+@media (prefers-color-scheme: dark) {
+  .glass-error-card {
+    background: rgba(30, 41, 59, 0.45);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+  }
+}
+
+.error-icon-box {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background-color: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 8px;
+}
+
+.error-title {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  line-height: 1.25;
+}
+
+.error-message {
+  font-size: 0.975rem;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+.error-details {
+  font-size: 0.825rem;
+  color: var(--text-muted);
+  background-color: var(--bg-app);
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-color);
+  width: 100%;
+  text-align: left;
+  word-break: break-all;
+}
+
+.error-details code {
+  color: #ef4444;
+}
+
+.error-actions {
+  margin-top: 8px;
+  width: 100%;
+}
+
+.error-actions .btn {
+  width: 100%;
+  justify-content: center;
+}
+
+.animate-scale-up {
+  animation: scaleUp 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+@keyframes scaleUp {
+  from {
+    transform: scale(0.92);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
   }
 }
 </style>

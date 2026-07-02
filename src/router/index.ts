@@ -1,6 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import type { RouteRecordRaw } from 'vue-router';
-import { MAP_CONFIG } from '../config/map';
 
 // Layouts
 import PublicLayout from '../layouts/PublicLayout.vue';
@@ -20,10 +19,12 @@ const routes: Array<RouteRecordRaw> = [
       {
         path: '',
         name: 'Landing',
-        redirect: () => {
-          const defaultArea = MAP_CONFIG.areas[MAP_CONFIG.defaultAreaSlug];
-          return `/${defaultArea?.provinceCode || 'hn'}/${MAP_CONFIG.defaultAreaSlug}`;
-        }
+        component: PublicArea
+      },
+      {
+        path: ':provinceCode',
+        name: 'PublicProvince',
+        component: PublicArea
       },
       {
         path: ':provinceCode/:areaSlug',

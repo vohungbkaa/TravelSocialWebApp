@@ -1,9 +1,11 @@
 // Map Configuration for MapLibre GL JS
 
+import type { AreaMapConfig, TenantConfig } from './api';
+
 export interface AreaScope {
   slug: string;
   name: string;
-  provinceCode: string;
+  provinceCode?: string;
   level: 'province' | 'ward';
   parentSlug?: string;
   center: [number, number]; // [lng, lat] for MapLibre
@@ -39,7 +41,7 @@ export const MAP_CONFIG = {
     'tien-thang': {
       slug: 'tien-thang',
       name: 'Xã Tiến Thắng',
-      provinceCode: 'hn',
+      provinceCode: 'hanoi',
       level: 'ward',
       center: [105.6775, 21.195],
       zoom: 13.2,
@@ -52,4 +54,43 @@ export const MAP_CONFIG = {
 
   // Configuration options for self-hosting transition
   selfHosted: {}
+};
+
+export const applyTenantConfig = (tenantConfig: TenantConfig) => {
+  if (tenantConfig.map.defaultAreaSlug) {
+    MAP_CONFIG.defaultAreaSlug = tenantConfig.map.defaultAreaSlug;
+  }
+  if (tenantConfig.map.center) {
+    MAP_CONFIG.defaultCenter = tenantConfig.map.center;
+  }
+  if (tenantConfig.map.zoom) {
+    MAP_CONFIG.defaultZoom = tenantConfig.map.zoom;
+  }
+  if (tenantConfig.map.minZoom) {
+    MAP_CONFIG.minZoom = tenantConfig.map.minZoom;
+  }
+  if (tenantConfig.map.maxZoom) {
+    MAP_CONFIG.maxZoom = tenantConfig.map.maxZoom;
+  }
+};
+
+export const applyAreaMapConfig = (areaConfig: AreaMapConfig): AreaScope => {
+  const scope: AreaScope = {
+    slug: areaConfig.slug,
+    name: areaConfig.name,
+    provinceCode: areaConfig.provinceCode,
+    level: areaConfig.level,
+    center: areaConfig.center,
+    zoom: areaConfig.zoom,
+    bounds: areaConfig.bounds || [
+      [areaConfig.center[0] - 0.06, areaConfig.center[1] - 0.06],
+      [areaConfig.center[0] + 0.06, areaConfig.center[1] + 0.06],
+    ],
+    description: areaConfig.description || '',
+    boundaryGeoJson: areaConfig.boundaryGeoJson,
+    boundaryGeoJsonUrl: areaConfig.boundaryGeoJsonUrl,
+  };
+
+  MAP_CONFIG.areas[scope.slug] = scope;
+  return scope;
 };

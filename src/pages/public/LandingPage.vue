@@ -5,15 +5,15 @@
       <div class="hero-bg-gradient"></div>
       <div class="container">
         <h1 class="hero-title">
-          Khám phá các điểm văn hóa và nông nghiệp <span class="gradient-text">Xã Tiến Thắng</span>
+          Khám phá các điểm văn hóa và trải nghiệm địa phương
         </h1>
         <p class="hero-subtitle">
-          Xem các địa điểm nổi bật tại xã Tiến Thắng, từ di tích lịch sử, kiến trúc làng quê đến mô hình nông nghiệp công nghệ cao.
+          Xem các địa điểm nổi bật, câu chuyện địa phương, hình ảnh và bản đồ tương tác theo từng tenant.
         </p>
         <div class="hero-actions">
-          <router-link to="/hn/tien-thang" class="btn btn-primary">
+          <router-link to="/" class="btn btn-primary">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
-            Xem bản đồ Tiến Thắng
+            Xem bản đồ
           </router-link>
           <router-link to="/admin" class="btn btn-secondary">
             Quản trị nội dung
@@ -57,7 +57,29 @@
 </template>
 
 <script setup lang="ts">
-// Landing page dashboard routing helper
+import { onMounted } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
+import { api } from '../../config/api';
+import { MAP_CONFIG, applyAreaMapConfig, applyTenantConfig } from '../../config/map';
+
+const route = useRoute();
+const router = useRouter();
+
+onMounted(async () => {
+  try {
+    const tenantConfig = await api.tenant.config();
+    applyTenantConfig(tenantConfig);
+    const defaultSlug = tenantConfig.map.defaultAreaSlug || MAP_CONFIG.defaultAreaSlug;
+    const areaConfig = await api.areas.getMapConfig(defaultSlug);
+    const areaScope = applyAreaMapConfig(areaConfig);
+    await router.replace({
+      path: `/${areaScope.provinceCode || 'local'}/${areaScope.slug}`,
+      query: route.query,
+    });
+  } catch (error) {
+    console.error('Failed to load tenant config from backend API:', error);
+  }
+});
 </script>
 
 <style scoped>
