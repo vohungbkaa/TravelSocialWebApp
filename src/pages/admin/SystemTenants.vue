@@ -1,83 +1,118 @@
 <template>
-  <div class="system-tenants animate-fade-in">
-    <!-- Header -->
+  <div class="system-tenants-container animate-fade-in">
+    <!-- Top Dashboard Header -->
     <div class="dashboard-header animate-slide-down">
-      <div>
-        <h1 class="gradient-text">Hệ thống phân vùng (Tenants)</h1>
-        <p class="subtitle">Tài khoản Super Admin: Quản lý danh sách các thành phố/khu vực trên toàn hệ thống.</p>
+      <div class="header-main">
+        <div class="header-badge">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect><rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect><line x1="6" y1="6" x2="6.01" y2="6"></line><line x1="6" y1="18" x2="6.01" y2="18"></line></svg>
+          <span>QUẢN TRỊ HỆ THỐNG</span>
+        </div>
+        <h1 class="gradient-text">Danh sách phân vùng (Tenants)</h1>
+        <p class="subtitle">Xem danh sách, quản lý cấu hình và chuyển đổi không gian làm việc giữa các phân vùng đô thị.</p>
+      </div>
+      <div class="system-stats shadow-glow">
+        <div class="stat-item">
+          <span class="stat-number">{{ tenants.length }}</span>
+          <span class="stat-label">Tổng phân vùng</span>
+        </div>
+        <div class="stat-divider"></div>
+        <div class="stat-item">
+          <span class="stat-number">{{ activeCount }}</span>
+          <span class="stat-label">Đang chạy</span>
+        </div>
       </div>
     </div>
 
-    <!-- Stats -->
-    <div class="stats-grid">
-      <div class="card stat-card glow-card" title="Tổng số Tenant">
-        <div class="stat-icon icon-areas">
-          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg>
-        </div>
-        <div>
-          <span class="stat-label">Tổng số khu vực (Tenant)</span>
-          <h3 class="stat-value">{{ tenants.length }}</h3>
-        </div>
+    <!-- Main Grid of Tenants -->
+    <div v-if="loading" class="loading-grid">
+      <div v-for="n in 3" :key="n" class="skeleton-card">
+        <div class="skeleton-header"></div>
+        <div class="skeleton-body"></div>
       </div>
     </div>
 
-    <!-- Tenants Grid -->
-    <div class="tenant-grid">
-      <div v-for="tenant in tenants" :key="tenant.id" class="tenant-card card hover-lift">
-        <div class="tenant-card-header" :style="{ backgroundColor: tenant.theme?.primaryColor || '#6366f1' }">
-          <div class="tenant-status" :class="{ active: tenant.enabled }">
-            {{ tenant.enabled ? 'ĐANG HOẠT ĐỘNG' : 'TẠM DỪNG' }}
+    <div v-else-if="tenants.length === 0" class="empty-state">
+      <div class="empty-icon">📂</div>
+      <h3>Không có dữ liệu phân vùng</h3>
+      <p>Hệ thống hiện tại chưa có phân vùng hoạt động nào được cấu hình.</p>
+    </div>
+
+    <div v-else class="tenant-grid">
+      <div 
+        v-for="tenant in tenants" 
+        :key="tenant.id" 
+        class="tenant-card hover-lift"
+        :style="{ '--tenant-theme': tenant.theme?.primaryColor || '#6366f1' }"
+      >
+        <div class="tenant-card-header">
+          <div class="status-indicator" :class="{ 'status-active': tenant.enabled }">
+            <span class="dot"></span>
+            {{ tenant.enabled ? 'Hoạt động' : 'Tạm khóa' }}
           </div>
-          <h2 class="tenant-name">{{ tenant.name }}</h2>
-          <p class="tenant-code"><code>{{ tenant.code }}</code></p>
+          <div class="tenant-title">
+            <h2>{{ tenant.name }}</h2>
+            <span class="code-badge">{{ tenant.code }}</span>
+          </div>
         </div>
-        
+
         <div class="tenant-card-body">
-          <div class="tenant-info-row">
-            <span class="info-label">Tên miền (Domain):</span>
-            <span class="info-value">
-              <a :href="'http://' + tenant.domain" target="_blank">{{ tenant.domain }}</a>
-            </span>
-          </div>
-          
-          <div class="tenant-stats">
-            <div class="t-stat">
-              <span class="t-stat-val">{{ tenant._count?.areas || 0 }}</span>
-              <span class="t-stat-lbl">Khu vực con</span>
-            </div>
-            <div class="t-stat">
-              <span class="t-stat-val">{{ tenant._count?.places || 0 }}</span>
-              <span class="t-stat-lbl">Địa danh</span>
-            </div>
-            <div class="t-stat">
-              <span class="t-stat-val">{{ tenant._count?.users || 0 }}</span>
-              <span class="t-stat-lbl">Quản trị viên</span>
+          <div class="meta-info">
+            <div class="info-group">
+              <label>Tên miền truy cập</label>
+              <a :href="'http://' + tenant.domain" target="_blank" class="domain-link">
+                {{ tenant.domain }}
+                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+              </a>
             </div>
           </div>
-          
-          <div class="tenant-actions">
-            <button class="btn btn-primary btn-premium w-100" @click="manageTenant(tenant)">
+
+          <div class="stats-mini-grid">
+            <div class="mini-stat">
+              <div class="stat-val">{{ tenant._count?.areas || 0 }}</div>
+              <div class="stat-lbl">Khu vực</div>
+            </div>
+            <div class="mini-stat">
+              <div class="stat-val">{{ tenant._count?.places || 0 }}</div>
+              <div class="stat-lbl">Địa danh</div>
+            </div>
+            <div class="mini-stat">
+              <div class="stat-val">{{ tenant._count?.users || 0 }}</div>
+              <div class="stat-lbl">Admin</div>
+            </div>
+          </div>
+
+          <div class="action-buttons">
+            <button class="btn btn-premium w-full" @click="manageTenant(tenant)">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
               Quản lý phân vùng này
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
             </button>
+            <a 
+              :href="'/travel?tenant=' + tenant.code" 
+              target="_blank" 
+              class="btn btn-outline w-full"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 18l6-6-6-6"></path></svg>
+              Xem trang bản đồ
+            </a>
           </div>
         </div>
       </div>
-      
-      <!-- Skeleton Loading or Empty -->
-      <div v-if="loading" class="tenant-card skeleton-card"></div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { api } from '../../config/api';
 
 const router = useRouter();
 const tenants = ref<any[]>([]);
 const loading = ref(true);
+
+const activeCount = computed(() => {
+  return tenants.value.filter(t => t.enabled).length;
+});
 
 const fetchTenants = async () => {
   loading.value = true;
@@ -92,16 +127,12 @@ const fetchTenants = async () => {
 };
 
 const manageTenant = (tenant: any) => {
-  // Save selected tenant to local storage
   localStorage.setItem('admin_active_tenant', tenant.code);
   localStorage.setItem('admin_active_tenant_name', tenant.name);
-  
-  // Reload window or push to /admin/areas
   window.location.href = '/admin/areas';
 };
 
 onMounted(() => {
-  // Clear any existing active tenant when arriving at this page
   localStorage.removeItem('admin_active_tenant');
   localStorage.removeItem('admin_active_tenant_name');
   fetchTenants();
@@ -109,77 +140,189 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.system-tenants {
+.system-tenants-container {
   display: flex;
   flex-direction: column;
   gap: 32px;
+  max-width: 1200px;
+  margin: 0 auto;
 }
 
-.tenant-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: 24px;
-}
-
-.tenant-card {
-  overflow: hidden;
+/* Header design */
+.dashboard-header {
   display: flex;
-  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  gap: 24px;
   background: var(--bg-card);
+  padding: 32px;
   border-radius: var(--radius-lg);
   border: 1px solid var(--border-color);
   box-shadow: var(--shadow-sm);
-  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.header-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(99, 102, 241, 0.1);
+  color: var(--primary);
+  padding: 6px 12px;
+  border-radius: var(--radius-full);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+  margin-bottom: 12px;
+  border: 1px solid rgba(99, 102, 241, 0.2);
+}
+
+.gradient-text {
+  font-size: 2.25rem;
+  font-weight: 850;
+  letter-spacing: -1px;
+  background: linear-gradient(135deg, var(--text-primary), var(--primary));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin: 0 0 8px 0;
+}
+
+.subtitle {
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+  margin: 0;
+}
+
+.system-stats {
+  display: flex;
+  background: var(--bg-app);
+  border: 1px solid var(--border-color);
+  padding: 16px 28px;
+  border-radius: var(--radius-md);
+  align-items: center;
+  gap: 24px;
+}
+
+.stat-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.stat-number {
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: var(--primary);
+}
+
+.stat-label {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.stat-divider {
+  width: 1px;
+  height: 32px;
+  background-color: var(--border-color);
+}
+
+/* Tenant cards layout */
+.tenant-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  gap: 28px;
+}
+
+.tenant-card {
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-color);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+}
+
+.tenant-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 4px;
+  background: var(--tenant-theme);
 }
 
 .tenant-card:hover {
-  transform: translateY(-4px);
-  box-shadow: var(--shadow-md);
-  border-color: rgba(99, 102, 241, 0.4);
+  transform: translateY(-6px);
+  box-shadow: 0 16px 32px -8px rgba(99, 102, 241, 0.12);
+  border-color: rgba(99, 102, 241, 0.3);
 }
 
 .tenant-card-header {
   padding: 24px;
-  color: white;
-  position: relative;
-  background: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(0,0,0,0.2));
-  background-blend-mode: overlay;
+  border-bottom: 1px solid var(--border-color);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.03) 0%, transparent 100%);
 }
 
-.tenant-status {
-  position: absolute;
-  top: 16px;
-  right: 16px;
-  font-size: 0.7rem;
+.status-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.75rem;
   font-weight: 700;
+  color: var(--text-secondary);
+  background: var(--bg-app);
   padding: 4px 10px;
-  border-radius: 20px;
-  background: rgba(0, 0, 0, 0.3);
-  backdrop-filter: blur(4px);
-  letter-spacing: 0.5px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--border-color);
+  margin-bottom: 16px;
 }
 
-.tenant-status.active {
-  background: rgba(16, 185, 129, 0.8);
+.status-indicator.status-active {
+  color: #10b981;
+  background: rgba(16, 185, 129, 0.08);
+  border-color: rgba(16, 185, 129, 0.2);
 }
 
-.tenant-name {
-  margin: 0 0 8px 0;
-  font-size: 1.5rem;
-  font-weight: 700;
-  text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+.status-indicator .dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #94a3b8;
 }
 
-.tenant-code {
+.status-indicator.status-active .dot {
+  background: #10b981;
+  box-shadow: 0 0 8px #10b981;
+}
+
+.tenant-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.tenant-title h2 {
+  font-size: 1.35rem;
+  font-weight: 800;
   margin: 0;
-  opacity: 0.9;
+  color: var(--text-primary);
 }
 
-.tenant-code code {
-  background: rgba(0,0,0,0.2);
+.code-badge {
+  font-family: monospace;
+  font-size: 0.8rem;
+  color: var(--tenant-theme);
+  background: rgba(99, 102, 241, 0.06);
+  border: 1px solid rgba(99, 102, 241, 0.15);
   padding: 2px 8px;
   border-radius: 4px;
-  font-size: 0.85rem;
+  font-weight: 700;
 }
 
 .tenant-card-body {
@@ -187,81 +330,182 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   gap: 20px;
+  flex: 1;
 }
 
-.tenant-info-row {
+.meta-info .info-group {
   display: flex;
   flex-direction: column;
   gap: 4px;
 }
 
-.info-label {
-  font-size: 0.85rem;
-  color: var(--text-secondary);
+.meta-info label {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.domain-link {
+  color: var(--text-primary);
   font-weight: 600;
-}
-
-.info-value a {
-  color: var(--primary);
+  font-size: 0.95rem;
   text-decoration: none;
-  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: color 0.2s;
+  word-break: break-all;
 }
 
-.info-value a:hover {
-  text-decoration: underline;
+.domain-link:hover {
+  color: var(--primary);
 }
 
-.tenant-stats {
-  display: flex;
-  justify-content: space-between;
-  padding: 16px;
+.stats-mini-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
   background: var(--bg-app);
+  padding: 14px;
   border-radius: var(--radius-md);
   border: 1px solid var(--border-color);
 }
 
-.t-stat {
+.mini-stat {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
+  gap: 2px;
 }
 
-.t-stat-val {
-  font-size: 1.25rem;
-  font-weight: 700;
+.mini-stat:not(:last-child) {
+  border-right: 1px solid var(--border-color);
+}
+
+.stat-val {
+  font-size: 1.15rem;
+  font-weight: 800;
   color: var(--text-primary);
 }
 
-.t-stat-lbl {
-  font-size: 0.75rem;
+.stat-lbl {
+  font-size: 0.7rem;
   color: var(--text-secondary);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
   font-weight: 600;
 }
 
-.tenant-actions {
+.action-buttons {
   margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
-.w-100 {
-  width: 100%;
-  display: flex;
-  justify-content: center;
+.btn {
+  display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
+  padding: 12px 20px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  border-radius: var(--radius-md);
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-decoration: none;
+  box-sizing: border-box;
+}
+
+.btn-premium {
+  background: linear-gradient(135deg, var(--tenant-theme) 0%, rgba(99, 102, 241, 0.8) 100%);
+  color: #ffffff;
+  box-shadow: 0 4px 12px -2px rgba(99, 102, 241, 0.2);
+}
+
+.btn-premium:hover {
+  filter: brightness(1.1);
+  box-shadow: 0 6px 16px -2px rgba(99, 102, 241, 0.35);
+  transform: translateY(-1px);
+}
+
+.btn-outline {
+  background: transparent;
+  color: var(--text-secondary);
+  border: 1px solid var(--border-color);
+}
+
+.btn-outline:hover {
+  background: var(--bg-app);
+  color: var(--text-primary);
+  border-color: var(--text-secondary);
+}
+
+/* Skeleton Loading states */
+.loading-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  gap: 28px;
 }
 
 .skeleton-card {
-  height: 300px;
-  background: linear-gradient(90deg, var(--bg-card) 25%, var(--bg-app) 50%, var(--bg-card) 75%);
-  background-size: 200% 100%;
-  animation: loading 1.5s infinite;
+  height: 320px;
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-color);
+  position: relative;
+  overflow: hidden;
 }
 
-@keyframes loading {
+.skeleton-header {
+  height: 80px;
+  background: linear-gradient(90deg, var(--bg-card) 25%, var(--bg-app) 50%, var(--bg-card) 75%);
+  background-size: 200% 100%;
+  animation: wave 1.5s infinite;
+}
+
+.skeleton-body {
+  height: calc(100% - 80px);
+  background: linear-gradient(90deg, var(--bg-card) 25%, var(--bg-app) 50%, var(--bg-card) 75%);
+  background-size: 200% 100%;
+  animation: wave 1.5s infinite;
+  animation-delay: 0.15s;
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 60px 24px;
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-color);
+  max-width: 500px;
+  margin: 40px auto;
+}
+
+.empty-icon {
+  font-size: 3rem;
+  margin-bottom: 16px;
+}
+
+@keyframes wave {
   0% { background-position: 200% 0; }
   100% { background-position: -200% 0; }
+}
+
+@media (max-width: 768px) {
+  .dashboard-header {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 24px;
+  }
+  .system-stats {
+    width: 100%;
+    justify-content: space-around;
+  }
 }
 </style>
